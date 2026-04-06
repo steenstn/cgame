@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
+#include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_scancode.h>
@@ -50,6 +51,7 @@ bool wInit() {
         printf("SDL_image fail");
         return false;
     }
+    SDL_ShowCursor(SDL_DISABLE);
     return true;
 }
 

@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
+#include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_stdinc.h>
@@ -12,9 +13,13 @@
 #include "sdl_wrapper.c"
 #include "input.c"
 
+#define INDEX(x, y) 
+
 typedef struct Thing {
     float x;
     float y;
+    float oldx;
+    float oldy;
     Image* image;
 } Thing;
 
@@ -24,8 +29,16 @@ typedef struct Vec2 {
 } Vec2;
 
 
+int getArrayIndex(int x, int y, int levelWidth, int tileWidth) {
+    int xPos = floorf((float)x/tileWidth);
+    int yPos = levelWidth * floorf((float)y/tileWidth);
+    return xPos + yPos;
+}
+
 int main(void) {
 
+    int screenWidth = 1600;
+    int screenHeight = 1200;
     int32_t mouseX = 0;
     int32_t mouseY = 0;
 
@@ -35,13 +48,13 @@ int main(void) {
         return 1;
     }
 
-    wWindow window = wCreateWindow(1600, 1200);
+    wWindow window = wCreateWindow(screenWidth, screenHeight);
     wRenderer renderer = wCreateRenderer(&window);
 
     wSetRenderDrawColor(&renderer, 0xff, 0xff, 0xff, 0xff);
 
 
-    int level_width = 30;
+    int level_width = 60;
     int level_height = 30;
     int tile_size = 100;
     char level[level_height*level_width];
@@ -56,7 +69,7 @@ int main(void) {
     Thing things[2];
     Image image = loadImage(&renderer, "cat.png", 100, 100);
     for(int i = 0; i < 2; i++) {
-        things[i] = (Thing){120 + i*100, 120 + i*100, &image};
+        things[i] = (Thing){.x=120 + i*100, .y =120 + i*100, .image = &image};
     }
 
     SDL_Event e;
@@ -94,6 +107,10 @@ int main(void) {
 
         wRenderClear(&renderer);
 
+
+        viewportX = mouseX+things[0].x-(float)screenWidth;
+        viewportY = mouseY+things[0].y-(float)screenHeight;
+
         for(int i = 0; i < level_width*level_height;i++) {
             int drawing_x = (i%level_width)*tile_size;
             int drawing_y = (i/level_width)*tile_size;
@@ -118,20 +135,32 @@ int main(void) {
             if(keys_down[MOVE_LEFT]) {
                 viewportX-=speed;
             }
+
         for(int i = 0; i<2;i++) {
+            Thing* t = &things[i];
+            t->oldx = t->x;
+            t->oldy = t->y;
 
             if(keys_down[MOVE_UP]) {
-                things[i].y-=speed;
+                t->y -= speed;
             }
             if(keys_down[MOVE_DOWN]) {
-                things[i].y+=speed;
+                t->y += speed;
             }
             if(keys_down[MOVE_RIGHT]) {
-                things[i].x+=speed;
+                t->x += speed;
             }
             if(keys_down[MOVE_LEFT]) {
-                things[i].x-=speed;
+                t->x -= speed;
             }
+
+            int arrayIndex= getArrayIndex(t->x, t->y, level_width, tile_size);
+            if(level[arrayIndex] == '1') {
+                t->x = t->oldx;
+                t->y = t->oldy;
+            }
+
+
             wDrawImage(&renderer, things[i].image, -viewportX + things[i].x, -viewportY + things[i].y);
         }
         wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
