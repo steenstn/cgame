@@ -13,8 +13,9 @@
 #include "input.c"
 
 typedef struct Thing {
-    wRect rect;
-    SDL_Texture* sdl_texture;
+    float x;
+    float y;
+    Image* image;
 } Thing;
 
 
@@ -48,9 +49,12 @@ int main(void) {
     }
 
     Thing things[2];
+    Image image = loadImage(&renderer, "cat.png", 100, 100);
+
     for(int i = 0; i < 2; i++) {
-        things[i] = (Thing){{(SDL_Rect){120 + i*100, 120 + i*100, 100, 100}}, NULL};
-        things[i].sdl_texture= SDL_CreateTextureFromSurface(renderer.renderer, loadedSurface);
+        things[i] = (Thing){120 + i*100, 120 + i*100, &image};
+        //things[i] = (Thing){{(SDL_Rect){120 + i*100, 120 + i*100, 100, 100}}, NULL};
+        //things[i].sdl_texture= SDL_CreateTextureFromSurface(renderer.renderer, loadedSurface);
     }
 
     SDL_FreeSurface(loadedSurface);
@@ -59,7 +63,7 @@ int main(void) {
 
     bool quit = false;
 
-    const Uint8* key_states = SDL_GetKeyboardState(NULL);
+    const uint8_t* key_states = SDL_GetKeyboardState(NULL);
 
     float speed = 10;
     while(quit == false) {
@@ -86,7 +90,7 @@ int main(void) {
 
         wSetRenderDrawColor(&renderer, 0, 0, 0, 0);
 
-        SDL_RenderClear(renderer.renderer);
+        wRenderClear(&renderer);
 
         for(int i = 0; i < level_width*level_height;i++) {
             int drawing_x = (i%level_width)*tile_size;
@@ -103,21 +107,22 @@ int main(void) {
         for(int i = 0; i<2;i++) {
 
             if(keys_down[MOVE_UP]) {
-                things[i].rect.rect.y-=speed;
+                things[i].y-=speed;
             }
             if(keys_down[MOVE_DOWN]) {
-                things[i].rect.rect.y+=speed;
+                things[i].y+=speed;
             }
             if(keys_down[MOVE_RIGHT]) {
-                things[i].rect.rect.x+=speed;
+                things[i].x+=speed;
             }
             if(keys_down[MOVE_LEFT]) {
-                things[i].rect.rect.x-=speed;
+                things[i].x-=speed;
             }
+            SDL_Rect rect = {things[i].x, things[i].y, things[i].image->width, things[i].image->height};
+            SDL_RenderCopy(renderer.renderer,  things[i].image->texture, NULL, &rect);
+        }
             wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
             SDL_RenderDrawRect(renderer.renderer, &mouse_rect);
-            SDL_RenderCopy(renderer.renderer,  things[i].sdl_texture, NULL, &things[i].rect.rect);
-        }
 
         SDL_RenderPresent(renderer.renderer);
     }

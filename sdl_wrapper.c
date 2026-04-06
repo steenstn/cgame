@@ -30,6 +30,12 @@ typedef struct wTexture {
     SDL_Texture* texture;
 } wTexture;
 
+typedef struct Image {
+    int width;
+    int height;
+    SDL_Texture* texture;
+} Image;
+
 
 bool wInit() {
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -59,12 +65,24 @@ wRenderer wCreateRenderer(wWindow* window) {
     return (wRenderer) {renderer};
 }
 
+Image loadImage(wRenderer* renderer, char* path, int width, int height) {
+    SDL_Surface* loadedSurface = IMG_Load(path);
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer->renderer, loadedSurface);
+    Image image =  (Image){.width = width, .height = height, .texture = texture};
+    SDL_FreeSurface(loadedSurface);
+    return image;
+}
+
 int wRenderCopy(wRenderer renderer, wTexture texture, wRect* srcRect, wRect* dstRect) {
  return SDL_RenderCopy(renderer.renderer, texture.texture, &srcRect->rect, &dstRect->rect);
 }
 
 void wSetRenderDrawColor(wRenderer* renderer, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     SDL_SetRenderDrawColor(renderer->renderer, r, g, b, a);
+}
+
+void wRenderClear(wRenderer* renderer) {
+    SDL_RenderClear(renderer->renderer);
 }
 
 void wFillRect(wRenderer* renderer, int x, int y, int width, int height) {
