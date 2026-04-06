@@ -118,8 +118,9 @@ int main(void) {
             if(keys_down[MOVE_LEFT]) {
                 things[i].x-=speed;
             }
-            SDL_Rect rect = {things[i].x, things[i].y, things[i].image->width, things[i].image->height};
-            SDL_RenderCopy(renderer.renderer,  things[i].image->texture, NULL, &rect);
+            //SDL_Rect rect = {things[i].x, things[i].y, things[i].image->width, things[i].image->height};
+            //SDL_RenderCopy(renderer.renderer,  things[i].image->texture, NULL, &rect);
+            wDrawImage(&renderer, things[i].image, things[i].x, things[i].y);
         }
             wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
             SDL_RenderDrawRect(renderer.renderer, &mouse_rect);

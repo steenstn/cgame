@@ -90,5 +90,8 @@ void wFillRect(wRenderer* renderer, int x, int y, int width, int height) {
     SDL_RenderFillRect(renderer->renderer, &rect);
 }
 
-
+void wDrawImage(wRenderer* renderer, Image* image, int x, int y) {
+    SDL_Rect rect = {.x = x, .y = y, .w = image->width, .h = image->height};
+    SDL_RenderCopy(renderer->renderer,  image->texture, NULL, &rect);
+}
 
