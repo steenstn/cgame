@@ -9,11 +9,11 @@
 #include <SDL2/SDL_image.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "sdl_wrapper.c"
 #include "input.c"
-
-#define INDEX(x, y) 
 
 typedef struct Thing {
     float x;
@@ -36,6 +36,7 @@ int getArrayIndex(int x, int y, int levelWidth, int tileWidth) {
 }
 
 int main(void) {
+    srand(time(NULL));
 
     int screenWidth = 1600;
     int screenHeight = 1200;
@@ -53,7 +54,6 @@ int main(void) {
 
     wSetRenderDrawColor(&renderer, 0xff, 0xff, 0xff, 0xff);
 
-
     int level_width = 60;
     int level_height = 30;
     int tile_size = 100;
@@ -61,8 +61,14 @@ int main(void) {
 
     for(int i = 0; i < level_width*level_height; i++) {
         level[i] = '.';
-        if (i%level_width == 0 || i <= level_width || i > (level_width*level_height)-level_width || ((i+1)%(level_width))==0 || i%13==0) {
+        if (i%level_width == 0 || i <= level_width || i > (level_width*level_height)-level_width || ((i+1)%(level_width))==0 || i%83==0) {
             level[i] = '1';
+        }
+        if (i > 0 && level[(i-1)] == '1') {
+            if( rand() % 10 > 3) {
+                level[i] = '1';
+            }
+
         }
     }
 
@@ -159,7 +165,6 @@ int main(void) {
                 t->x = t->oldx;
                 t->y = t->oldy;
             }
-
 
             wDrawImage(&renderer, things[i].image, -viewportX + things[i].x, -viewportY + things[i].y);
         }
