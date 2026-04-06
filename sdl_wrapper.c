@@ -30,6 +30,9 @@ typedef struct wTexture {
     SDL_Texture* texture;
 } wTexture;
 
+
+
+
 typedef struct Image {
     int width;
     int height;
@@ -90,8 +93,18 @@ void wFillRect(wRenderer* renderer, int x, int y, int width, int height) {
     SDL_RenderFillRect(renderer->renderer, &rect);
 }
 
+void wDrawRect(wRenderer* renderer, int x, int y, int width, int height) {
+    SDL_Rect rect = {.x = x, .y = y, .w = width, .h = height};
+    SDL_RenderDrawRect(renderer->renderer, &rect);
+}
+
 void wDrawImage(wRenderer* renderer, Image* image, int x, int y) {
     SDL_Rect rect = {.x = x, .y = y, .w = image->width, .h = image->height};
     SDL_RenderCopy(renderer->renderer,  image->texture, NULL, &rect);
 }
+
+void wRenderFrame(wRenderer* renderer) {
+    SDL_RenderPresent(renderer->renderer);
+}
+
 

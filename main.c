@@ -18,13 +18,19 @@ typedef struct Thing {
     Image* image;
 } Thing;
 
+typedef struct Vec2 {
+    float x;
+    float y;
+} Vec2;
 
-SDL_Rect mouse_rect= {.w=10, .h=10};
-
-SDL_Rect viewport = {0, 0, 1600, 1200};
 
 int main(void) {
 
+    int32_t mouseX = 0;
+    int32_t mouseY = 0;
+
+    int viewportX = 0;
+    int viewportY = 0;
     if (!wInit()) {
         return 1;
     }
@@ -33,7 +39,6 @@ int main(void) {
     wRenderer renderer = wCreateRenderer(&window);
 
     wSetRenderDrawColor(&renderer, 0xff, 0xff, 0xff, 0xff);
-    SDL_Surface* loadedSurface = IMG_Load("cat.png");
 
 
     int level_width = 30;
@@ -50,20 +55,17 @@ int main(void) {
 
     Thing things[2];
     Image image = loadImage(&renderer, "cat.png", 100, 100);
-
     for(int i = 0; i < 2; i++) {
         things[i] = (Thing){120 + i*100, 120 + i*100, &image};
-        //things[i] = (Thing){{(SDL_Rect){120 + i*100, 120 + i*100, 100, 100}}, NULL};
-        //things[i].sdl_texture= SDL_CreateTextureFromSurface(renderer.renderer, loadedSurface);
     }
 
-    SDL_FreeSurface(loadedSurface);
-    
     SDL_Event e;
 
     bool quit = false;
 
+
     const uint8_t* key_states = SDL_GetKeyboardState(NULL);
+
 
     float speed = 10;
     while(quit == false) {
@@ -78,8 +80,8 @@ int main(void) {
                 }
             }
             if (e.type == SDL_MOUSEMOTION) {
-                mouse_rect.x = e.motion.x;
-                mouse_rect.y = e.motion.y;
+                mouseX = e.motion.x;
+                mouseY = e.motion.y;
             }
         }
 
@@ -100,10 +102,22 @@ int main(void) {
             } else {
                 wSetRenderDrawColor(&renderer, 20, 20, 10, 255);
             }
-            wFillRect(&renderer, drawing_x, drawing_y, tile_size, tile_size);
+            wFillRect(&renderer, -viewportX+drawing_x, -viewportY+drawing_y, tile_size, tile_size);
 
         }
 
+            if(keys_down[MOVE_UP]) {
+                viewportY-=speed;
+            }
+            if(keys_down[MOVE_DOWN]) {
+                viewportY+=speed;
+            }
+            if(keys_down[MOVE_RIGHT]) {
+                viewportX+=speed;
+            }
+            if(keys_down[MOVE_LEFT]) {
+                viewportX-=speed;
+            }
         for(int i = 0; i<2;i++) {
 
             if(keys_down[MOVE_UP]) {
@@ -118,17 +132,13 @@ int main(void) {
             if(keys_down[MOVE_LEFT]) {
                 things[i].x-=speed;
             }
-            //SDL_Rect rect = {things[i].x, things[i].y, things[i].image->width, things[i].image->height};
-            //SDL_RenderCopy(renderer.renderer,  things[i].image->texture, NULL, &rect);
-            wDrawImage(&renderer, things[i].image, things[i].x, things[i].y);
+            wDrawImage(&renderer, things[i].image, -viewportX + things[i].x, -viewportY + things[i].y);
         }
-            wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
-            SDL_RenderDrawRect(renderer.renderer, &mouse_rect);
+        wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
+        wDrawRect(&renderer, mouseX, mouseY, 10, 10);
 
-        SDL_RenderPresent(renderer.renderer);
+        wRenderFrame(&renderer);
     }
 
-    //SDL_DestroyWindow(window);
-    //SDL_Quit();
     return 0;
 }
