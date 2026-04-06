@@ -84,24 +84,19 @@ int main(void) {
             keys_down[current_key_map.action] = key_states[current_key_map.scancode];
         }
 
-        SDL_SetRenderDrawColor(renderer.renderer, 0, 0, 0, 0);
+        wSetRenderDrawColor(&renderer, 0, 0, 0, 0);
 
         SDL_RenderClear(renderer.renderer);
-
-        SDL_Rect drawing_rect = {0,0,tile_size, tile_size};
 
         for(int i = 0; i < level_width*level_height;i++) {
             int drawing_x = (i%level_width)*tile_size;
             int drawing_y = (i/level_width)*tile_size;
-            drawing_rect.x = drawing_x;
-            drawing_rect.y = drawing_y;
             if(level[i] == '.') {
                 wSetRenderDrawColor(&renderer, 100, 100, 100, 255);
             } else {
                 wSetRenderDrawColor(&renderer, 20, 20, 10, 255);
             }
             wFillRect(&renderer, drawing_x, drawing_y, tile_size, tile_size);
-            //SDL_RenderFillRect(renderer.renderer, &drawing_rect);
 
         }
 
