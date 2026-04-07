@@ -36,7 +36,8 @@ int getArrayIndex(int x, int y, int levelWidth, int tileWidth) {
 }
 
 int main(void) {
-    Image all_images[10] = {};
+
+    ImageSystem image_system = {.image_array = (Image[10]){}};
 
     srand(time(NULL));
 
@@ -54,9 +55,6 @@ int main(void) {
     wWindow window = wCreateWindow(screenWidth, screenHeight);
     wRenderer renderer = wCreateRenderer(&window);
 
-    Image image = loadImage(&renderer, "cat.png", 100, 100);
-    all_images[0] = image;
-        
     wSetRenderDrawColor(&renderer, 0xff, 0xff, 0xff, 0xff);
 
     int level_width = 60;
@@ -77,9 +75,10 @@ int main(void) {
         }
     }
 
+    int player_image = loadImage(&renderer, &image_system, "cat.png", 100, 100);
     Thing things[2];
     for(int i = 0; i < 2; i++) {
-        things[i] = (Thing){.x=320 + i*100, .y =120 + i*100, .image_index = 0};
+        things[i] = (Thing){.x=520 + i*100, .y =120 + i*100, .image_index = player_image};
     }
 
     SDL_Event e;
@@ -171,7 +170,7 @@ int main(void) {
             }
 
             //wDrawImage(&renderer, things[i].image, -viewportX + things[i].x, -viewportY + things[i].y);
-            wDrawImage(&renderer, &all_images[t->image_index], -viewportX + things[i].x, -viewportY + things[i].y);
+            wDrawImage(&renderer, &image_system.image_array[t->image_index], -viewportX + things[i].x, -viewportY + things[i].y);
         }
         wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
         wDrawRect(&renderer, mouseX, mouseY, 10, 10);

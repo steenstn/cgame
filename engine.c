@@ -40,6 +40,10 @@ typedef struct Image {
     SDL_Texture* texture;
 } Image;
 
+typedef struct ImageSystem {
+    int current_index;
+    Image* image_array;
+} ImageSystem;
 
 bool wInit() {
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -70,12 +74,14 @@ wRenderer wCreateRenderer(wWindow* window) {
     return (wRenderer) {renderer};
 }
 
-Image loadImage(wRenderer* renderer, char* path, int width, int height) {
-    SDL_Surface* loadedSurface = IMG_Load(path);
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer->renderer, loadedSurface);
+int loadImage(wRenderer* renderer, ImageSystem* image_system, char* path, int width, int height) {
+    SDL_Surface* loaded_surface = IMG_Load(path);
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer->renderer, loaded_surface);
     Image image =  (Image){.width = width, .height = height, .texture = texture};
-    SDL_FreeSurface(loadedSurface);
-    return image;
+    SDL_FreeSurface(loaded_surface);
+
+    image_system->image_array[image_system->current_index++] = image;
+    return image_system->current_index-1;
 }
 
 int wRenderCopy(wRenderer renderer, wTexture texture, wRect* srcRect, wRect* dstRect) {
@@ -108,5 +114,4 @@ void wDrawImage(wRenderer* renderer, Image* image, int x, int y) {
 void wRenderFrame(wRenderer* renderer) {
     SDL_RenderPresent(renderer->renderer);
 }
-
 
