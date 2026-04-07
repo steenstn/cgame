@@ -6,4 +6,4 @@ CompileFlags:
 If:
   PathMatch: input\.c
 CompileFlags:
-  Add: [-include, sdl_wrapper.c]
+  Add: [-include, engine.c]

@@ -20,7 +20,7 @@ typedef struct Thing {
     float y;
     float oldx;
     float oldy;
-    Image* image;
+    int image_index;
 } Thing;
 
 typedef struct Vec2 {
@@ -36,6 +36,8 @@ int getArrayIndex(int x, int y, int levelWidth, int tileWidth) {
 }
 
 int main(void) {
+    Image all_images[10] = {};
+
     srand(time(NULL));
 
     int screenWidth = 1600;
@@ -52,6 +54,9 @@ int main(void) {
     wWindow window = wCreateWindow(screenWidth, screenHeight);
     wRenderer renderer = wCreateRenderer(&window);
 
+    Image image = loadImage(&renderer, "cat.png", 100, 100);
+    all_images[0] = image;
+        
     wSetRenderDrawColor(&renderer, 0xff, 0xff, 0xff, 0xff);
 
     int level_width = 60;
@@ -73,9 +78,8 @@ int main(void) {
     }
 
     Thing things[2];
-    Image image = loadImage(&renderer, "cat.png", 100, 100);
     for(int i = 0; i < 2; i++) {
-        things[i] = (Thing){.x=120 + i*100, .y =120 + i*100, .image = &image};
+        things[i] = (Thing){.x=320 + i*100, .y =120 + i*100, .image_index = 0};
     }
 
     SDL_Event e;
@@ -166,7 +170,8 @@ int main(void) {
                 t->y = t->oldy;
             }
 
-            wDrawImage(&renderer, things[i].image, -viewportX + things[i].x, -viewportY + things[i].y);
+            //wDrawImage(&renderer, things[i].image, -viewportX + things[i].x, -viewportY + things[i].y);
+            wDrawImage(&renderer, &all_images[t->image_index], -viewportX + things[i].x, -viewportY + things[i].y);
         }
         wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
         wDrawRect(&renderer, mouseX, mouseY, 10, 10);
