@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "sdl_wrapper.c"
+#include "engine.c"
 #include "input.c"
 
 typedef struct Thing {
