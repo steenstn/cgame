@@ -1,0 +1,4 @@
+
+char* yay() {
+    return "yay";
+}

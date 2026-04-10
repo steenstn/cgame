@@ -1,4 +1,5 @@
-all: lsp
+.PHONY: game
+all: lsp game
 	gcc -std=c99 -Wall -Wextra main.c -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lm -o game
 
 lsp:
@@ -26,3 +27,5 @@ lsp:
 		} \
 	}' main.c > .clangd
 	@echo "Generated .clangd"
+game:
+	gcc -fPIC -shared -o libgame.so game.c

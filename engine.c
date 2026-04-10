@@ -10,6 +10,8 @@
 #include <SDL2/SDL_image.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+
 
 typedef struct wWindow {
     SDL_Window* window;
@@ -76,7 +78,14 @@ wRenderer wCreateRenderer(wWindow* window) {
 
 int loadImage(wRenderer* renderer, ImageSystem* image_system, char* path, int width, int height) {
     SDL_Surface* loaded_surface = IMG_Load(path);
+    if (loaded_surface == NULL) {
+        printf("Failed to load file %s", path);
+        return 0;
+    }
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer->renderer, loaded_surface);
+    if (texture == NULL) {
+        return 0;
+    }
     Image image =  (Image){.width = width, .height = height, .texture = texture};
     SDL_FreeSurface(loaded_surface);
 

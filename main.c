@@ -10,18 +10,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <time.h>
+#include <dlfcn.h>
 
+#include "game.h"
 #include "engine.c"
 #include "input.c"
 
-typedef struct Thing {
-    float x;
-    float y;
-    float oldx;
-    float oldy;
-    int image_index;
-} Thing;
 
 typedef struct Vec2 {
     float x;
@@ -37,7 +34,43 @@ int getArrayIndex(int x, int y, int levelWidth, int tileWidth) {
 
 int main(void) {
 
-    ImageSystem image_system = {.image_array = (Image[10]){}};
+/*
+   void* lib = NULL; 
+   while(true) {
+       if(lib != NULL) {
+           dlclose(lib);
+       }
+    lib = dlopen("./libname.so", RTLD_NOW | RTLD_GLOBAL);
+    if(!lib) {
+        printf("no: %s\n", dlerror());
+        continue;
+    } else {
+    }
+
+
+    char* (*yay_func)(void) = (char* (*)(void)) dlsym(lib, "yay");
+    char* res = yay_func();
+    printf("hells yeah: %s\n", res);
+       
+   }
+   return 0;
+   */
+    printf("here\n");
+    void* game_handle = NULL;
+    game_handle = dlopen("./libgame.so", RTLD_NOW | RTLD_GLOBAL);
+    if (!game_handle) {
+        printf("Failed to load game.\n");
+        exit(1);
+    }
+    GameAPI* (*get_api)() = dlsym(game_handle, "get_game_api");
+    GameAPI* api = get_api();
+
+    GameState* game_state = api->init();
+
+    api->step(game_state);
+
+
+    ImageSystem image_system = {.current_index = 1, .image_array = (Image[10]){}};
 
     srand(time(NULL));
 
@@ -90,8 +123,24 @@ int main(void) {
 
 
     float speed = 10;
+int counter =0;
     while(quit == false) {
 
+
+        if(counter++ %60 ==0){
+            if(game_handle) {
+                dlclose(game_handle);
+            }
+            game_handle = dlopen("./libgame.so", RTLD_NOW | RTLD_GLOBAL);
+            if(!game_handle) {
+                printf("Failed to hot reload\n");
+            } else {
+
+            GameAPI* (*get_api)() = dlsym(game_handle, "get_game_api");
+            GameAPI* new_api = get_api();
+            api = new_api;
+            }
+        }
         while(SDL_PollEvent(&e)) {
             if(e.type == SDL_QUIT) quit = true;
             if (e.type == SDL_KEYDOWN) {
@@ -174,7 +223,10 @@ int main(void) {
         }
         wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
         wDrawRect(&renderer, mouseX, mouseY, 10, 10);
-
+        if(game_handle){
+            api->step(game_state);
+        }
+        //printf("m: %d", game.game_state->mouseX);
         wRenderFrame(&renderer);
     }
 
