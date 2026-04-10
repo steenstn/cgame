@@ -16,7 +16,6 @@
 #include <dlfcn.h>
 
 #include "game.h"
-#include "engine.c"
 #include "input.c"
 
 
@@ -67,7 +66,8 @@ int main(void) {
 
     GameState* game_state = api->init();
 
-    api->step(game_state);
+
+    //api->step(game_state);
 
 
     ImageSystem image_system = {.current_index = 1, .image_array = (Image[10]){}};
@@ -88,7 +88,7 @@ int main(void) {
     wWindow window = wCreateWindow(screenWidth, screenHeight);
     wRenderer renderer = wCreateRenderer(&window);
 
-    wSetRenderDrawColor(&renderer, 0xff, 0xff, 0xff, 0xff);
+    //wSetRenderDrawColor(&renderer, 0xff, 0xff, 0xff, 0xff);
 
     int level_width = 60;
     int level_height = 30;
@@ -156,6 +156,10 @@ int counter =0;
             }
         }
 
+        if(game_handle){
+            api->step(game_state, &renderer);
+        }
+
         for(int i = 0; i < _NUM_ACTIONS; i++) {
             KeyMapping current_key_map = key_map[i];
             keys_down[current_key_map.action] = key_states[current_key_map.scancode];
@@ -175,7 +179,7 @@ int counter =0;
             if(level[i] == '.') {
                 wSetRenderDrawColor(&renderer, 100, 100, 100, 255);
             } else {
-                wSetRenderDrawColor(&renderer, 20, 20, 10, 255);
+                wSetRenderDrawColor(&renderer, game_state->r, game_state->g, game_state->b, 255);
             }
             wFillRect(&renderer, -viewportX+drawing_x, -viewportY+drawing_y, tile_size, tile_size);
 
@@ -221,11 +225,8 @@ int counter =0;
             //wDrawImage(&renderer, things[i].image, -viewportX + things[i].x, -viewportY + things[i].y);
             wDrawImage(&renderer, &image_system.image_array[t->image_index], -viewportX + things[i].x, -viewportY + things[i].y);
         }
-        wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
+        //wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
         wDrawRect(&renderer, mouseX, mouseY, 10, 10);
-        if(game_handle){
-            api->step(game_state);
-        }
         //printf("m: %d", game.game_state->mouseX);
         wRenderFrame(&renderer);
     }

@@ -14,8 +14,10 @@ GameState* gameState = malloc(sizeof(GameState));
     return gameState;
 }
 
-static bool step(GameState* state) {
-    printf("woop\n");
+static bool step(GameState* state, wRenderer* renderer) {
+    state->r = 40;
+    state->g = 250;
+    state->b = 40;
     return true;
 }
 

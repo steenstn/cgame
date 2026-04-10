@@ -2,8 +2,3 @@
 CompileFlags:
   Add: [-std=c99, -Wall, -I.]
   Compiler: gcc
----
-If:
-  PathMatch: input\.c
-CompileFlags:
-  Add: [-include, engine.c]

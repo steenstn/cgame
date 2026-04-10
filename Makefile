@@ -28,4 +28,4 @@ lsp:
 	}' main.c > .clangd
 	@echo "Generated .clangd"
 game:
-	gcc -fPIC -shared -o libgame.so game.c
+	gcc -fPIC -shared -o libgame.so -lSDL2 -lm game.c
