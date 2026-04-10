@@ -1,6 +1,7 @@
 // https://yakvi.github.io/handmade-hero-notes/html/day11.html
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
@@ -44,7 +45,7 @@ int main(void) {
     GameAPI* api = get_api();
 
     GameMemory game_memory = {0};
-    game_memory.permanent_storage_size = 1024 * 1024 * 200,
+    game_memory.permanent_storage_size = 1024 * 1024 * 200;
     game_memory.permanent_storage = malloc (game_memory.permanent_storage_size);
 
     GameState* game_state = api->init(&game_memory);
@@ -63,7 +64,7 @@ int main(void) {
         exit(1);
     }
 
-    SDL_ShowCursor(SDL_DISABLE);
+    //SDL_ShowCursor(SDL_DISABLE);
 
     SDL_Window* window = SDL_CreateWindow("SDL tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
 
@@ -93,6 +94,9 @@ int main(void) {
                 api = new_api;
             }
         }
+
+        game_state->mouse_state.left_button_click = false;
+        game_state->mouse_state.left_button_click = false;
         while(SDL_PollEvent(&e)) {
             if(e.type == SDL_QUIT) quit = true;
             if (e.type == SDL_KEYDOWN) {
@@ -102,10 +106,37 @@ int main(void) {
                     break;
                 }
             }
+            if (e.type == SDL_MOUSEMOTION) {
+                game_state->mouse_state.x = e.motion.x;
+                game_state->mouse_state.y = e.motion.y;
+            }
+            if (e.type == SDL_MOUSEBUTTONDOWN) {
+                if (e.button.button == SDL_BUTTON_LEFT) {
+                    game_state->mouse_state.left_button_down = true;
+                    game_state->mouse_state.left_button_click = true;
+
+                }
+                if (e.button.button == SDL_BUTTON_RIGHT) {
+                    game_state->mouse_state.right_button_down = true;
+                    game_state->mouse_state.right_button_click = true;
+                }
+            }
+            if (e.type == SDL_MOUSEBUTTONUP) {
+                if (e.button.button == SDL_BUTTON_LEFT) {
+                    game_state->mouse_state.left_button_down = false;
+                }
+                if (e.button.button == SDL_BUTTON_RIGHT) {
+                    game_state->mouse_state.right_button_down = false;
+                }
+            }
         }
+    
+        int size = 0;
+        const uint8_t* key_states = SDL_GetKeyboardState(&size);
+        //printf("size %d\n", size);
 
         if(game_handle){
-            api->update_and_render(game_state);
+            api->update_and_render(game_state, key_states);
         }
 
         void* pixels;

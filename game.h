@@ -12,12 +12,24 @@ typedef struct GameMemory {
     size_t permanent_storage_size;
 } GameMemory;
 
+typedef struct Thing {
+    float x,y;
+    uint64_t flags;
+} Thing;
 
+typedef struct MouseState {
+    int x,y;
+    bool left_button_down;
+    bool right_button_down;
+    bool left_button_click;
+    bool right_button_click;
+} MouseState;
+
+ 
 typedef struct GameState {
     Arena permanent_arena;
 
-    uint8_t* key_states;
-
+    Thing* things;
     uint8_t* level;
     int levelWidth;
     int levelHeight;
@@ -29,13 +41,16 @@ typedef struct GameState {
     int viewportX;
     int viewportY;
     int r,g,b;
+
+    uint8_t* keys_down;
+    MouseState mouse_state;
     uint32_t* output_buffer;
 } GameState;
 
 
 typedef struct GameAPI {
     GameState *(*init)(GameMemory* gameMemory);
-    bool (*update_and_render)(GameState* state);
+    bool (*update_and_render)(GameState* state, const uint8_t* key_states);
 } GameAPI;
 
 GameAPI* get_game_api();

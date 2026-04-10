@@ -6,6 +6,19 @@
 
 #define ARRAY_INDEX(x, y, width) (x + width*y)
 
+enum Flags {
+    FLAG_PLAYER_CONTROLLED = 1,
+};
+
+enum KeyCode {
+    KEY_UP,
+    KEY_LEFT,
+    KEY_DOWN,
+    KEY_RIGHT,
+    _NUM_KEY_CODES,
+};
+
+
 static GameState *init(GameMemory* gameMemory) {
 
     GameState* state = (GameState*)gameMemory->permanent_storage;
@@ -16,6 +29,12 @@ static GameState *init(GameMemory* gameMemory) {
 
     arena_init(&state->permanent_arena, arena_base, gameMemory->permanent_storage_size - sizeof(GameState));
 
+    state->things = arena_alloc(&state->permanent_arena, MAX_THINGS);
+    for(int i = 0; i < 3; i++) {
+        state->things[i].x = i*400;
+    }
+    state->things[0].flags = FLAG_PLAYER_CONTROLLED;
+
     state->screenWidth = 1600;
     state->screenHeight = 1200;
     state->mouseX = 0;
@@ -23,7 +42,15 @@ static GameState *init(GameMemory* gameMemory) {
     state->levelWidth = 60;
     state->levelHeight = 30;
     state->tileSize = 100;
+    state->r = 100;
     state->level = arena_alloc(&state->permanent_arena, 60*30);
+
+    state->keys_down = arena_alloc(&state->permanent_arena, _NUM_KEY_CODES);
+    state->keys_down[KEY_UP] = 'w'-93;
+    state->keys_down[KEY_LEFT] = 'a'-93;
+    state->keys_down[KEY_DOWN] = 's'-93;
+    state->keys_down[KEY_RIGHT] = 'd'-93;
+
     state->output_buffer = arena_alloc(&state->permanent_arena, state->screenHeight*state->screenWidth*4);
 
     uint8_t* level = state->level;
@@ -45,9 +72,20 @@ static GameState *init(GameMemory* gameMemory) {
     return state;
 }
 
+static bool aabb_collision(float x1, float y1, float w1, float h1,
+                          float x2, float y2, float w2, float h2) {
+    return x1 < x2 + w2 &&
+           x1 + w1 > x2 &&
+           y1 < y2 + h2 &&
+           y1 + h1 > y2;
+}
 // is this correct?
 static int clamp(int value, int min, int max) {
     return value > min ? value < max ? value : min : max;
+}
+
+static void drawPixel(GameState* state, int x, int y, uint32_t color) {
+    state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
 }
 
 static void drawRect(GameState* state, int _x, int _y, int width, int height, uint32_t color) {
@@ -67,23 +105,68 @@ static void drawRect(GameState* state, int _x, int _y, int width, int height, ui
 }
 
 
-static bool update_and_render(GameState* state) {
+static bool update_and_render(GameState* state, const uint8_t* key_states) {
+        /*for(int i = 0; i < _NUM_KEY_CODES; i++) {
+            printf("lol: %d", key_states[i]);
+            state->keys_down[i] = key_states[state->keys_down[i]];
+            printf("state->keys_down[%d]: %d\n",i, state->keys_down[i]);
+        }*/
+        for(int i = 0; i < 512; i++) {
+            if (key_states[i]) {
 
-    state->mouseX= (state->mouseX + 2) % state->screenWidth;
+            printf("Also: %d\n", (int)'a');
+            printf("%d: %d\n", i, key_states[i]);
+            printf("lol: %d\n",state->keys_down[KEY_LEFT]);
+            }
+        }
+
+        
+// a 4
+// s 22
+// d 7
+// w 26
+
+        MouseState* mouse = &state->mouse_state;
+        float speed = 3.0;
+        for(int i = 0; i < 3; i++) {
+            Thing* t = &state->things[i];
+            if(state->mouse_state.left_button_click && aabb_collision(mouse->x, mouse->y, 1, 1, t->x, t->y, 200, 200)) {
+                t->flags = 1 - t->flags;
+            }
+            if(t->flags == FLAG_PLAYER_CONTROLLED) {
+                if (key_states[4]) {
+                    t->x-=speed;
+                }
+                if (key_states[22]) {
+                    t->y+=speed;
+                }
+                if (key_states[7]) {
+                    t->x+=speed;
+                }
+                if (key_states[26]) {
+                    t->y-=speed;
+                }
+            }
+        }
+
     memset(state->output_buffer, 0, 1600*1200*4);
 
-    for(int y = 0; y < 30; y++) {
-        for(int x = 0; x < 60; x++) {
+    for(int y = 0; y < state->levelHeight; y++) {
+        for(int x = 0; x < state->levelWidth; x++) {
             if(state->level[ARRAY_INDEX(x, y, 60)] == '1') {
-
                 drawRect(state, x*100, y*100, 100, 100, 0xffffffff);
             }
         }
 
     }
 
-    drawRect(state, state->mouseX,100,200,200, 0x110000ff);
-    drawRect(state, 100,150,20,200, 0x110000ff);
+    for(int i = 0; i < 3; i++) {
+        Thing t = state->things[i];
+        uint32_t color = t.flags ? 0xff00ff00 : 0x4f4f4f;
+        drawRect(state, t.x,t.y,200,200, color);
+    }
+
+    //drawRect(state, 400,150+state->r,200,200, 0x110000ff);
     return true;
 }
 
