@@ -1,2 +1,3 @@
 game
 *.so
+.nvim.lua

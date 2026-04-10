@@ -1,3 +1,4 @@
+// https://yakvi.github.io/handmade-hero-notes/html/day11.html
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_mouse.h>
@@ -33,28 +34,7 @@ int getArrayIndex(int x, int y, int levelWidth, int tileWidth) {
 
 int main(void) {
 
-/*
-   void* lib = NULL; 
-   while(true) {
-       if(lib != NULL) {
-           dlclose(lib);
-       }
-    lib = dlopen("./libname.so", RTLD_NOW | RTLD_GLOBAL);
-    if(!lib) {
-        printf("no: %s\n", dlerror());
-        continue;
-    } else {
-    }
-
-
-    char* (*yay_func)(void) = (char* (*)(void)) dlsym(lib, "yay");
-    char* res = yay_func();
-    printf("hells yeah: %s\n", res);
-       
-   }
-   return 0;
-   */
-    printf("here\n");
+    srand(time(NULL));
     void* game_handle = NULL;
     game_handle = dlopen("./libgame.so", RTLD_NOW | RTLD_GLOBAL);
     if (!game_handle) {
@@ -64,23 +44,21 @@ int main(void) {
     GameAPI* (*get_api)() = dlsym(game_handle, "get_game_api");
     GameAPI* api = get_api();
 
-    GameState* game_state = api->init();
-
-
-    //api->step(game_state);
-
+    GameMemory game_memory = {0};
+        game_memory.permanent_storage_size = 1024 * 1024,
+        game_memory.permanent_storage = malloc (game_memory.permanent_storage_size);
+    GameState* game_state = api->init(&game_memory);
 
     ImageSystem image_system = {.current_index = 1, .image_array = (Image[10]){}};
 
-    srand(time(NULL));
 
     int screenWidth = 1600;
     int screenHeight = 1200;
     int32_t mouseX = 0;
     int32_t mouseY = 0;
 
-    int viewportX = 0;
-    int viewportY = 0;
+    int* viewportX = &game_state->viewportX;
+    int* viewportY = &game_state->viewportY;
     if (!wInit()) {
         return 1;
     }
@@ -90,23 +68,6 @@ int main(void) {
 
     //wSetRenderDrawColor(&renderer, 0xff, 0xff, 0xff, 0xff);
 
-    int level_width = 60;
-    int level_height = 30;
-    int tile_size = 100;
-    char level[level_height*level_width];
-
-    for(int i = 0; i < level_width*level_height; i++) {
-        level[i] = '.';
-        if (i%level_width == 0 || i <= level_width || i > (level_width*level_height)-level_width || ((i+1)%(level_width))==0 || i%83==0) {
-            level[i] = '1';
-        }
-        if (i > 0 && level[(i-1)] == '1') {
-            if( rand() % 10 > 3) {
-                level[i] = '1';
-            }
-
-        }
-    }
 
     int player_image = loadImage(&renderer, &image_system, "cat.png", 100, 100);
     Thing things[2];
@@ -123,11 +84,10 @@ int main(void) {
 
 
     float speed = 10;
-int counter =0;
+    int counter =0;
     while(quit == false) {
 
-
-        if(counter++ %60 ==0){
+        if(counter++ %30 == 0){
             if(game_handle) {
                 dlclose(game_handle);
             }
@@ -156,9 +116,6 @@ int counter =0;
             }
         }
 
-        if(game_handle){
-            api->step(game_state, &renderer);
-        }
 
         for(int i = 0; i < _NUM_ACTIONS; i++) {
             KeyMapping current_key_map = key_map[i];
@@ -169,33 +126,27 @@ int counter =0;
 
         wRenderClear(&renderer);
 
-
-        viewportX = mouseX+things[0].x-(float)screenWidth;
-        viewportY = mouseY+things[0].y-(float)screenHeight;
-
-        for(int i = 0; i < level_width*level_height;i++) {
-            int drawing_x = (i%level_width)*tile_size;
-            int drawing_y = (i/level_width)*tile_size;
-            if(level[i] == '.') {
-                wSetRenderDrawColor(&renderer, 100, 100, 100, 255);
-            } else {
-                wSetRenderDrawColor(&renderer, game_state->r, game_state->g, game_state->b, 255);
-            }
-            wFillRect(&renderer, -viewportX+drawing_x, -viewportY+drawing_y, tile_size, tile_size);
-
+        if(game_handle){
+            api->step(game_state, &renderer);
         }
 
+        *viewportX = mouseX+things[0].x-(float)screenWidth;
+        *viewportY = mouseY+things[0].y-(float)screenHeight;
+
+        int level_width = game_state->levelWidth;
+        int tile_size = game_state->tileSize;
+
             if(keys_down[MOVE_UP]) {
-                viewportY-=speed;
+                *viewportY-=speed;
             }
             if(keys_down[MOVE_DOWN]) {
-                viewportY+=speed;
+                *viewportY+=speed;
             }
             if(keys_down[MOVE_RIGHT]) {
-                viewportX+=speed;
+                *viewportX+=speed;
             }
             if(keys_down[MOVE_LEFT]) {
-                viewportX-=speed;
+                *viewportX-=speed;
             }
 
         for(int i = 0; i<2;i++) {
@@ -217,13 +168,13 @@ int counter =0;
             }
 
             int arrayIndex= getArrayIndex(t->x, t->y, level_width, tile_size);
-            if(level[arrayIndex] == '1') {
+            if(game_state->level[arrayIndex] == '1') {
                 t->x = t->oldx;
                 t->y = t->oldy;
             }
 
             //wDrawImage(&renderer, things[i].image, -viewportX + things[i].x, -viewportY + things[i].y);
-            wDrawImage(&renderer, &image_system.image_array[t->image_index], -viewportX + things[i].x, -viewportY + things[i].y);
+            wDrawImage(&renderer, &image_system.image_array[t->image_index], -*viewportX + things[i].x, -*viewportY + things[i].y);
         }
         //wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
         wDrawRect(&renderer, mouseX, mouseY, 10, 10);
