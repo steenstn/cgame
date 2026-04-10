@@ -56,20 +56,13 @@ static void drawRect(GameState* state, int _x, int _y, int width, int height, ui
         }
 }
 
+
 static bool step(GameState* state) {
 
     memset(state->output_buffer, 0, 1600*1200*4);
 
     drawRect(state, 100,100,200,200, 0xff0000ff);
     drawRect(state, 200,500,100,200, 0xff0000ff);
-/*
-    for(int i = 0; i < 1600*1200*4;i+=4) {
-        state->output_buffer[i] = 0;
-        state->output_buffer[i+1] = 200;
-        state->output_buffer[i+2] = 255;
-        state->output_buffer[i+3] = 0;
-    }
-    */
     return true;
 }
 

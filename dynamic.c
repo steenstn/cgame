@@ -1,4 +1,0 @@
-
-char* yay() {
-    return "yay";
-}

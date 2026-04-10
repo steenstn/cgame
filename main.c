@@ -52,9 +52,18 @@ int main(void) {
     int screenWidth = 1600;
     int screenHeight = 1200;
 
-    if (!wInit()) {
-        return 1;
+    if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("SDL could not initialize: %s\n", SDL_GetError());
+        exit(1);
     }
+
+    int imgFlags = IMG_INIT_PNG;
+    if (!(IMG_Init(imgFlags) & imgFlags)) {
+        printf("SDL_image fail");
+        exit(1);
+    }
+
+    SDL_ShowCursor(SDL_DISABLE);
 
     SDL_Window* window = SDL_CreateWindow("SDL tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
 
