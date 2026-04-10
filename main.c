@@ -119,7 +119,6 @@ int main(void) {
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
 
-        //wRenderFrame(&renderer);
     }
 
     return 0;

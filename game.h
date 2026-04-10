@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "engine.c"
 #include "arena.c"
 #define MAX_THINGS 100
 
@@ -29,10 +28,6 @@ typedef struct GameState {
     uint32_t* output_buffer;
 } GameState;
 
-
-typedef struct PlatformAPI {
-    wRenderer* renderer;
-} PlatformAPI;
 
 typedef struct GameAPI {
     GameState *(*init)(GameMemory* gameMemory);
