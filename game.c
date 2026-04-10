@@ -45,31 +45,52 @@ static GameState *init(GameMemory* gameMemory) {
     return state;
 }
 
+// is this correct?
+static int clamp(int value, int min, int max) {
+    return value > min ? value < max ? value : min : max;
+}
 
 static void drawRect(GameState* state, int _x, int _y, int width, int height, uint32_t color) {
         int x_end = _x+width;
         int y_end = _y+height;
         for(int y = _y; y < y_end; y++) {
+            if(y <0 || y > state->screenHeight) {
+                continue;
+            }
             for(int x = _x; x < x_end; x++) {
+                if (x<0 || x>state->screenWidth) {
+                    continue;
+                }
                 state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
             }
         }
 }
 
 
-static bool step(GameState* state) {
+static bool update_and_render(GameState* state) {
 
+    state->mouseX= (state->mouseX + 2) % state->screenWidth;
     memset(state->output_buffer, 0, 1600*1200*4);
 
-    drawRect(state, 100,100,200,200, 0xff0000ff);
-    drawRect(state, 200,500,100,200, 0xff0000ff);
+    for(int y = 0; y < 30; y++) {
+        for(int x = 0; x < 60; x++) {
+            if(state->level[ARRAY_INDEX(x, y, 60)] == '1') {
+
+                drawRect(state, x*100, y*100, 100, 100, 0xffffffff);
+            }
+        }
+
+    }
+
+    drawRect(state, state->mouseX,100,200,200, 0x110000ff);
+    drawRect(state, 100,150,20,200, 0x110000ff);
     return true;
 }
 
 
 static GameAPI api = {
     .init = init,
-    .step = step
+    .update_and_render = update_and_render
 };
 
 GameAPI* get_game_api() {

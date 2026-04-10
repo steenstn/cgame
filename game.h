@@ -3,7 +3,8 @@
 
 #include "arena.c"
 #define MAX_THINGS 100
-
+#define SCREEN_WIDTH 1376
+#define SCREEN_HEIGHT 1080
 
 typedef struct GameMemory {
     bool is_initialized;
@@ -14,6 +15,9 @@ typedef struct GameMemory {
 
 typedef struct GameState {
     Arena permanent_arena;
+
+    uint8_t* key_states;
+
     uint8_t* level;
     int levelWidth;
     int levelHeight;
@@ -31,7 +35,7 @@ typedef struct GameState {
 
 typedef struct GameAPI {
     GameState *(*init)(GameMemory* gameMemory);
-    bool (*step)(GameState* state);
+    bool (*update_and_render)(GameState* state);
 } GameAPI;
 
 GameAPI* get_game_api();

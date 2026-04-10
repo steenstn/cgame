@@ -1,5 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 typedef struct Arena {
     uint8_t* base;
     size_t size;
@@ -16,7 +18,8 @@ void* arena_alloc(Arena *arena, size_t size) {
     size_t aligned_size = (size + 7) & ~7;
 
     if (arena->used + aligned_size > arena->size) {
-        return NULL;
+        printf("Ran out of memory");
+        exit(1);
     }
 
     void *result = arena->base + arena->used;

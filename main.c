@@ -44,8 +44,8 @@ int main(void) {
     GameAPI* api = get_api();
 
     GameMemory game_memory = {0};
-        game_memory.permanent_storage_size = 1024 * 1024 * 100,
-        game_memory.permanent_storage = malloc (game_memory.permanent_storage_size);
+    game_memory.permanent_storage_size = 1024 * 1024 * 200,
+    game_memory.permanent_storage = malloc (game_memory.permanent_storage_size);
 
     GameState* game_state = api->init(&game_memory);
 
@@ -88,10 +88,9 @@ int main(void) {
             if(!game_handle) {
                 printf("Failed to hot reload\n");
             } else {
-
-            GameAPI* (*get_api)() = dlsym(game_handle, "get_game_api");
-            GameAPI* new_api = get_api();
-            api = new_api;
+                GameAPI* (*get_api)() = dlsym(game_handle, "get_game_api");
+                GameAPI* new_api = get_api();
+                api = new_api;
             }
         }
         while(SDL_PollEvent(&e)) {
@@ -106,7 +105,7 @@ int main(void) {
         }
 
         if(game_handle){
-            api->step(game_state);
+            api->update_and_render(game_state);
         }
 
         void* pixels;
