@@ -1,19 +1,21 @@
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "game.h"
+
+#define ARRAY_INDEX(x, y, width) (x + width*y)
 
 static GameState *init(GameMemory* gameMemory) {
 
     GameState* state = (GameState*)gameMemory->permanent_storage;
+    if (gameMemory->is_initialized) {
+        return state;
+    }
     uint8_t* arena_base = (uint8_t*)gameMemory->permanent_storage + sizeof(GameState);
 
     arena_init(&state->permanent_arena, arena_base, gameMemory->permanent_storage_size - sizeof(GameState));
 
-    //arena_init(state.permanent_arena, gameMemory, gameMemory->permanent_storage_size);
-
-    //state->things = arena_alloc(state->permanent_arena, sizeof(Thing)*2);
     state->screenWidth = 1600;
     state->screenHeight = 1200;
     state->mouseX = 0;
@@ -22,6 +24,7 @@ static GameState *init(GameMemory* gameMemory) {
     state->levelHeight = 30;
     state->tileSize = 100;
     state->level = arena_alloc(&state->permanent_arena, 60*30);
+    state->output_buffer = arena_alloc(&state->permanent_arena, state->screenHeight*state->screenWidth*4);
 
     uint8_t* level = state->level;
     int level_width = state->levelWidth;
@@ -42,29 +45,34 @@ static GameState *init(GameMemory* gameMemory) {
     return state;
 }
 
-static bool step(GameState* state, wRenderer* renderer) {
-    state->r = 200;
-    state->g = 250;
-    state->b = 10;
-    uint8_t* level = state->level;
-    int level_width = state->levelWidth;
-    int level_height = state->levelHeight;
-    int tile_size = state->tileSize;
 
-    printf("%d\n", state->viewportX);
-    for(int i = 0; i < level_width*level_height;i++) {
-        int drawing_x = (i%level_width)*tile_size;
-        int drawing_y = (i/level_width)*tile_size;
-        if(level[i] == '.') {
-            wSetRenderDrawColor(renderer, 100, 100, 100, 255);
-        } else {
-            wSetRenderDrawColor(renderer, state->r, state->g, state->b, 255);
+static void drawRect(GameState* state, int _x, int _y, int width, int height, uint32_t color) {
+        int x_end = _x+width;
+        int y_end = _y+height;
+        for(int y = _y; y < y_end; y++) {
+            for(int x = _x; x < x_end; x++) {
+                state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
+            }
         }
-        wFillRect(renderer, -state->viewportX+drawing_x, -state->viewportY+drawing_y, tile_size, tile_size);
+}
 
+static bool step(GameState* state) {
+
+    memset(state->output_buffer, 0, 1600*1200*4);
+
+    drawRect(state, 100,100,200,200, 0xff0000ff);
+    drawRect(state, 200,500,100,200, 0xff0000ff);
+/*
+    for(int i = 0; i < 1600*1200*4;i+=4) {
+        state->output_buffer[i] = 0;
+        state->output_buffer[i+1] = 200;
+        state->output_buffer[i+2] = 255;
+        state->output_buffer[i+3] = 0;
     }
+    */
     return true;
 }
+
 
 static GameAPI api = {
     .init = init,

@@ -17,7 +17,6 @@
 #include <dlfcn.h>
 
 #include "game.h"
-#include "input.c"
 
 
 typedef struct Vec2 {
@@ -45,45 +44,30 @@ int main(void) {
     GameAPI* api = get_api();
 
     GameMemory game_memory = {0};
-        game_memory.permanent_storage_size = 1024 * 1024,
+        game_memory.permanent_storage_size = 1024 * 1024 * 100,
         game_memory.permanent_storage = malloc (game_memory.permanent_storage_size);
+
     GameState* game_state = api->init(&game_memory);
-
-    ImageSystem image_system = {.current_index = 1, .image_array = (Image[10]){}};
-
 
     int screenWidth = 1600;
     int screenHeight = 1200;
-    int32_t mouseX = 0;
-    int32_t mouseY = 0;
 
-    int* viewportX = &game_state->viewportX;
-    int* viewportY = &game_state->viewportY;
     if (!wInit()) {
         return 1;
     }
 
-    wWindow window = wCreateWindow(screenWidth, screenHeight);
-    wRenderer renderer = wCreateRenderer(&window);
+    SDL_Window* window = SDL_CreateWindow("SDL tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
 
-    //wSetRenderDrawColor(&renderer, 0xff, 0xff, 0xff, 0xff);
-
-
-    int player_image = loadImage(&renderer, &image_system, "cat.png", 100, 100);
-    Thing things[2];
-    for(int i = 0; i < 2; i++) {
-        things[i] = (Thing){.x=520 + i*100, .y =120 + i*100, .image_index = player_image};
+    if (window == NULL) {
+        printf("Window could not be created: %s\n", SDL_GetError());
+        exit(1);
     }
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, screenWidth, screenHeight);
 
     SDL_Event e;
 
     bool quit = false;
-
-
-    const uint8_t* key_states = SDL_GetKeyboardState(NULL);
-
-
-    float speed = 10;
     int counter =0;
     while(quit == false) {
 
@@ -110,76 +94,23 @@ int main(void) {
                     break;
                 }
             }
-            if (e.type == SDL_MOUSEMOTION) {
-                mouseX = e.motion.x;
-                mouseY = e.motion.y;
-            }
         }
-
-
-        for(int i = 0; i < _NUM_ACTIONS; i++) {
-            KeyMapping current_key_map = key_map[i];
-            keys_down[current_key_map.action] = key_states[current_key_map.scancode];
-        }
-
-        wSetRenderDrawColor(&renderer, 0, 0, 0, 0);
-
-        wRenderClear(&renderer);
 
         if(game_handle){
-            api->step(game_state, &renderer);
+            api->step(game_state);
         }
 
-        *viewportX = mouseX+things[0].x-(float)screenWidth;
-        *viewportY = mouseY+things[0].y-(float)screenHeight;
+        void* pixels;
+        int pitch;
+        SDL_LockTexture(texture, NULL, &pixels, &pitch);
 
-        int level_width = game_state->levelWidth;
-        int tile_size = game_state->tileSize;
+        memcpy(pixels, game_state->output_buffer, screenWidth*screenHeight*4);
+        SDL_UnlockTexture(texture);
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, texture, NULL, NULL);
+        SDL_RenderPresent(renderer);
 
-            if(keys_down[MOVE_UP]) {
-                *viewportY-=speed;
-            }
-            if(keys_down[MOVE_DOWN]) {
-                *viewportY+=speed;
-            }
-            if(keys_down[MOVE_RIGHT]) {
-                *viewportX+=speed;
-            }
-            if(keys_down[MOVE_LEFT]) {
-                *viewportX-=speed;
-            }
-
-        for(int i = 0; i<2;i++) {
-            Thing* t = &things[i];
-            t->oldx = t->x;
-            t->oldy = t->y;
-
-            if(keys_down[MOVE_UP]) {
-                t->y -= speed;
-            }
-            if(keys_down[MOVE_DOWN]) {
-                t->y += speed;
-            }
-            if(keys_down[MOVE_RIGHT]) {
-                t->x += speed;
-            }
-            if(keys_down[MOVE_LEFT]) {
-                t->x -= speed;
-            }
-
-            int arrayIndex= getArrayIndex(t->x, t->y, level_width, tile_size);
-            if(game_state->level[arrayIndex] == '1') {
-                t->x = t->oldx;
-                t->y = t->oldy;
-            }
-
-            //wDrawImage(&renderer, things[i].image, -viewportX + things[i].x, -viewportY + things[i].y);
-            wDrawImage(&renderer, &image_system.image_array[t->image_index], -*viewportX + things[i].x, -*viewportY + things[i].y);
-        }
-        //wSetRenderDrawColor(&renderer, 100, 200, 200, 255);
-        wDrawRect(&renderer, mouseX, mouseY, 10, 10);
-        //printf("m: %d", game.game_state->mouseX);
-        wRenderFrame(&renderer);
+        //wRenderFrame(&renderer);
     }
 
     return 0;

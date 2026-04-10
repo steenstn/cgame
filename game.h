@@ -5,15 +5,9 @@
 #include "arena.c"
 #define MAX_THINGS 100
 
-typedef struct Thing {
-    float x;
-    float y;
-    float oldx;
-    float oldy;
-    int image_index;
-} Thing;
 
 typedef struct GameMemory {
+    bool is_initialized;
     void* permanent_storage;
     size_t permanent_storage_size;
 } GameMemory;
@@ -21,7 +15,6 @@ typedef struct GameMemory {
 
 typedef struct GameState {
     Arena permanent_arena;
-    Thing* things;
     uint8_t* level;
     int levelWidth;
     int levelHeight;
@@ -33,7 +26,7 @@ typedef struct GameState {
     int viewportX;
     int viewportY;
     int r,g,b;
-    void* output_buffer;
+    uint32_t* output_buffer;
 } GameState;
 
 
@@ -43,7 +36,7 @@ typedef struct PlatformAPI {
 
 typedef struct GameAPI {
     GameState *(*init)(GameMemory* gameMemory);
-    bool (*step)(GameState* state, wRenderer* renderer);
+    bool (*step)(GameState* state);
 } GameAPI;
 
 GameAPI* get_game_api();
