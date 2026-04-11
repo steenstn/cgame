@@ -5,6 +5,10 @@
 #include "game.h"
 
 #define ARRAY_INDEX(x, y, width) (x + width*y)
+#define SCANCODE_A 4
+#define SCANCODE_D 7
+#define SCANCODE_S 22
+#define SCANCODE_W 26
 
 enum Flags {
     FLAG_PLAYER_CONTROLLED = 1,
@@ -126,35 +130,48 @@ static bool update_and_render(GameState* state, const uint8_t* key_states) {
 // d 7
 // w 26
 
+        float speed = 5.0;
+                if (key_states[SCANCODE_A]) {
+                    state->viewportX-=speed;
+                }
+                if (key_states[SCANCODE_S]) {
+                    state->viewportY+=speed;
+                }
+                if (key_states[SCANCODE_D]) {
+                    state->viewportX+=speed;
+                }
+                if (key_states[SCANCODE_W]) {
+                    state->viewportY-=speed;
+                }
         MouseState* mouse = &state->mouse_state;
-        float speed = 3.0;
         for(int i = 0; i < 3; i++) {
             Thing* t = &state->things[i];
-            if(state->mouse_state.left_button_click && aabb_collision(mouse->x, mouse->y, 1, 1, t->x, t->y, 200, 200)) {
+            if(state->mouse_state.left_button_click && aabb_collision(mouse->x, mouse->y, 1, 1, -state->viewportX+t->x, -state->viewportY+t->y, 200, 200)) {
                 t->flags = 1 - t->flags;
             }
             if(t->flags == FLAG_PLAYER_CONTROLLED) {
-                if (key_states[4]) {
+                if (key_states[SCANCODE_A]) {
                     t->x-=speed;
                 }
-                if (key_states[22]) {
+                if (key_states[SCANCODE_S]) {
                     t->y+=speed;
                 }
-                if (key_states[7]) {
+                if (key_states[SCANCODE_D]) {
                     t->x+=speed;
                 }
-                if (key_states[26]) {
+                if (key_states[SCANCODE_W]) {
                     t->y-=speed;
                 }
             }
         }
 
+    //---------- Render 
     memset(state->output_buffer, 0, 1600*1200*4);
 
     for(int y = 0; y < state->levelHeight; y++) {
         for(int x = 0; x < state->levelWidth; x++) {
             if(state->level[ARRAY_INDEX(x, y, 60)] == '1') {
-                drawRect(state, x*100, y*100, 100, 100, 0xffffffff);
+                drawRect(state, -state->viewportX+x*100, -state->viewportY+y*100, 100, 100, 0xffffffff);
             }
         }
 
@@ -163,10 +180,9 @@ static bool update_and_render(GameState* state, const uint8_t* key_states) {
     for(int i = 0; i < 3; i++) {
         Thing t = state->things[i];
         uint32_t color = t.flags ? 0xff00ff00 : 0x4f4f4f;
-        drawRect(state, t.x,t.y,200,200, color);
+        drawRect(state, -state->viewportX+t.x,-state->viewportY+t.y,200,200, color);
     }
 
-    //drawRect(state, 400,150+state->r,200,200, 0x110000ff);
     return true;
 }
 
