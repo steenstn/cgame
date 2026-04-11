@@ -4,8 +4,8 @@
 #include "game_engine.h"
 #include "arena.c"
 #define MAX_THINGS 100
-#define SCREEN_WIDTH 1376
-#define SCREEN_HEIGHT 1080
+#define SCREEN_WIDTH 1400
+#define SCREEN_HEIGHT 1050
 
 typedef struct GameMemory {
     bool is_initialized;
@@ -15,6 +15,7 @@ typedef struct GameMemory {
 
 typedef struct Thing {
     float x,y;
+    int width, height;
     uint64_t flags;
 } Thing;
 

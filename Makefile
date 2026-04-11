@@ -29,3 +29,5 @@ lsp:
 	@echo "Generated .clangd"
 game:
 	gcc -fPIC -shared -o libgame.so -lSDL2 -lm game.c
+test:
+	gcc test.c -o test

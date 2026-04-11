@@ -50,8 +50,8 @@ int main(void) {
 
     GameState* game_state = api->init(&game_memory);
 
-    int screenWidth = 1600;
-    int screenHeight = 1200;
+    int screenWidth = SCREEN_WIDTH;
+    int screenHeight = SCREEN_HEIGHT;
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL could not initialize: %s\n", SDL_GetError());

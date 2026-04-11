@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,7 +6,9 @@
 #include "game.h"
 
 enum Flags {
-    FLAG_PLAYER_CONTROLLED = 1,
+    IS_ACTIVE = 1<<0,
+    FLAG_PLAYER_CONTROLLED = 1<<1,
+    FLAG_PROJECTILE = 1<<2,
 };
 
 
@@ -22,11 +25,17 @@ static GameState *init(GameMemory* gameMemory) {
     state->things = arena_alloc(&state->permanent_arena, MAX_THINGS);
     for(int i = 0; i < 3; i++) {
         state->things[i].x = i*400;
+        state->things[i].width = 20;
+        state->things[i].height = 20;
+        state->things[i].flags = IS_ACTIVE;
     }
-    state->things[0].flags = FLAG_PLAYER_CONTROLLED;
+    state->things[0].flags = FLAG_PLAYER_CONTROLLED | IS_ACTIVE;
+    state->things[0].x = 400;
+    state->things[0].y = 400;
 
-    state->screenWidth = 1600;
-    state->screenHeight = 1200;
+
+    state->screenWidth = SCREEN_WIDTH;
+    state->screenHeight = SCREEN_HEIGHT;
     state->mouseX = 0;
     state->mouseY = 0;
     state->levelWidth = 60;
@@ -83,11 +92,11 @@ static void drawRect(GameState* state, int _x, int _y, int width, int height, ui
         int x_end = _x+width;
         int y_end = _y+height;
         for(int y = _y; y < y_end; y++) {
-            if(y <0 || y > state->screenHeight) {
+            if(y <0 || y >= state->screenHeight) {
                 continue;
             }
             for(int x = _x; x < x_end; x++) {
-                if (x<0 || x>state->screenWidth) {
+                if (x<0 || x>=state->screenWidth) {
                     continue;
                 }
                 state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
@@ -113,26 +122,20 @@ static bool update_and_render(GameState* state, const u8* key_states) {
 
 
         float speed = 5.0;
-        if(key_states[SCANCODE_LSHIFT]) {
-            speed = 10;
-        }
-        if (key_states[SCANCODE_A]) {
-            state->viewportX-=speed;
-        }
-        if (key_states[SCANCODE_S]) {
-            state->viewportY+=speed;
-        }
-        if (key_states[SCANCODE_D]) {
-            state->viewportX+=speed;
-        }
-        if (key_states[SCANCODE_W]) {
-            state->viewportY-=speed;
-        }
+
         MouseState* mouse = &state->mouse_state;
+
+        state->viewportX = state->things[0].x+mouse->x*0.9-SCREEN_WIDTH;
+        state->viewportY = state->things[0].y+mouse->y*0.9-SCREEN_HEIGHT;
+
+        if (key_states[SCANCODE_LSHIFT]) {
+            speed = 8;
+        }
+
         for(int i = 0; i < 3; i++) {
             Thing* t = &state->things[i];
             if(state->mouse_state.left_button_click && aabb_collision(mouse->x, mouse->y, 1, 1, -state->viewportX+t->x, -state->viewportY+t->y, 200, 200)) {
-                t->flags = 1 - t->flags;
+                t->flags = flags_flip(t->flags, FLAG_PLAYER_CONTROLLED);
             }
             if(t->flags == FLAG_PLAYER_CONTROLLED) {
                 if (key_states[SCANCODE_A]) {
@@ -151,8 +154,9 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         }
 
     //---------- Render 
-    memset(state->output_buffer, 0, 1600*1200*4);
+    memset(state->output_buffer, 0, SCREEN_WIDTH*SCREEN_HEIGHT*4);
 
+    // TODO Do not draw all tiles, only inside viewport
     for(int y = 0; y < state->levelHeight; y++) {
         for(int x = 0; x < state->levelWidth; x++) {
             if(state->level[ARRAY_INDEX(x, y, 60)] == '1') {
@@ -165,7 +169,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     for(int i = 0; i < 3; i++) {
         Thing t = state->things[i];
         uint32_t color = t.flags ? 0xff00ff00 : 0x4f4f4f;
-        drawRect(state, -state->viewportX+t.x,-state->viewportY+t.y,200,200, color);
+        drawRect(state, -state->viewportX+t.x,-state->viewportY+t.y,t.width,t.height, color);
     }
 
     return true;
