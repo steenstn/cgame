@@ -15,6 +15,7 @@ typedef struct GameMemory {
 
 typedef struct Thing {
     float x,y;
+    float vx, vy;
     int width, height;
     uint64_t flags;
 } Thing;
@@ -38,8 +39,6 @@ typedef struct GameState {
     int tileSize;
     int screenWidth;
     int screenHeight;
-    int32_t mouseX;
-    int32_t mouseY;
     int viewportX;
     int viewportY;
     int r,g,b;

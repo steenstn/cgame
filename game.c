@@ -1,4 +1,3 @@
-#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,8 +35,6 @@ static GameState *init(GameMemory* gameMemory) {
 
     state->screenWidth = SCREEN_WIDTH;
     state->screenHeight = SCREEN_HEIGHT;
-    state->mouseX = 0;
-    state->mouseY = 0;
     state->levelWidth = 60;
     state->levelHeight = 30;
     state->tileSize = 100;
@@ -137,7 +134,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             if(state->mouse_state.left_button_click && aabb_collision(mouse->x, mouse->y, 1, 1, -state->viewportX+t->x, -state->viewportY+t->y, 200, 200)) {
                 t->flags = flags_flip(t->flags, FLAG_PLAYER_CONTROLLED);
             }
-            if(t->flags == FLAG_PLAYER_CONTROLLED) {
+            if(flags_contains(t->flags, FLAG_PLAYER_CONTROLLED)) {
                 if (key_states[SCANCODE_A]) {
                     t->x-=speed;
                 }
@@ -168,7 +165,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
 
     for(int i = 0; i < 3; i++) {
         Thing t = state->things[i];
-        uint32_t color = t.flags ? 0xff00ff00 : 0x4f4f4f;
+        uint32_t color = flags_contains(t.flags, FLAG_PLAYER_CONTROLLED) ? 0xff00ff00 : 0x4f4f4f;
         drawRect(state, -state->viewportX+t.x,-state->viewportY+t.y,t.width,t.height, color);
     }
 
