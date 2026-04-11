@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "game_engine.h"
 #include "arena.c"
 #define MAX_THINGS 100
 #define SCREEN_WIDTH 1376

@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "game_engine.h"
 #include "game.h"
 
 enum Flags {
     FLAG_PLAYER_CONTROLLED = 1,
 };
+
 
 static GameState *init(GameMemory* gameMemory) {
 
@@ -36,14 +36,15 @@ static GameState *init(GameMemory* gameMemory) {
     state->level = arena_alloc(&state->permanent_arena, 60*30);
 
     state->keys_down = arena_alloc(&state->permanent_arena, _NUM_KEY_CODES);
-    state->keys_down[KEY_UP] = 'w'-93;
-    state->keys_down[KEY_LEFT] = 'a'-93;
-    state->keys_down[KEY_DOWN] = 's'-93;
-    state->keys_down[KEY_RIGHT] = 'd'-93;
+    state->keys_down[KEY_UP] = SCANCODE_W;
+    state->keys_down[KEY_LEFT] = SCANCODE_A;
+    state->keys_down[KEY_DOWN] = SCANCODE_S;
+    state->keys_down[KEY_RIGHT] = SCANCODE_D;
+    state->keys_down[KEY_SHIFT] = SCANCODE_LSHIFT;
 
     state->output_buffer = arena_alloc(&state->permanent_arena, state->screenHeight*state->screenWidth*4);
 
-    uint8_t* level = state->level;
+    u8* level = state->level;
     int level_width = state->levelWidth;
     int level_height = state->levelHeight;
 
@@ -95,36 +96,38 @@ static void drawRect(GameState* state, int _x, int _y, int width, int height, ui
 }
 
 
-static bool update_and_render(GameState* state, const uint8_t* key_states) {
+static bool update_and_render(GameState* state, const u8* key_states) {
         /*for(int i = 0; i < _NUM_KEY_CODES; i++) {
             printf("lol: %d", key_states[i]);
             state->keys_down[i] = key_states[state->keys_down[i]];
             printf("state->keys_down[%d]: %d\n",i, state->keys_down[i]);
         }*/
+
         for(int i = 0; i < 512; i++) {
             if (key_states[i]) {
 
             printf("Also: %d\n", (int)'a');
             printf("%d: %d\n", i, key_states[i]);
-            printf("lol: %d\n",state->keys_down[KEY_LEFT]);
             }
         }
 
-        
 
         float speed = 5.0;
-                if (key_states[SCANCODE_A]) {
-                    state->viewportX-=speed;
-                }
-                if (key_states[SCANCODE_S]) {
-                    state->viewportY+=speed;
-                }
-                if (key_states[SCANCODE_D]) {
-                    state->viewportX+=speed;
-                }
-                if (key_states[SCANCODE_W]) {
-                    state->viewportY-=speed;
-                }
+        if(key_states[SCANCODE_LSHIFT]) {
+            speed = 10;
+        }
+        if (key_states[SCANCODE_A]) {
+            state->viewportX-=speed;
+        }
+        if (key_states[SCANCODE_S]) {
+            state->viewportY+=speed;
+        }
+        if (key_states[SCANCODE_D]) {
+            state->viewportX+=speed;
+        }
+        if (key_states[SCANCODE_W]) {
+            state->viewportY-=speed;
+        }
         MouseState* mouse = &state->mouse_state;
         for(int i = 0; i < 3; i++) {
             Thing* t = &state->things[i];
