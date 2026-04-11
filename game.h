@@ -17,6 +17,7 @@ typedef struct Thing {
     float x,y;
     float vx, vy;
     int width, height;
+    int projectile_counter;
     uint64_t flags;
 } Thing;
 
@@ -41,7 +42,6 @@ typedef struct GameState {
     int screenHeight;
     int viewportX;
     int viewportY;
-    int r,g,b;
 
     uint8_t* keys_down;
     MouseState mouse_state;

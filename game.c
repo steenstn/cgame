@@ -59,7 +59,6 @@ static GameState *init(GameMemory* gameMemory) {
     state->levelWidth = 60;
     state->levelHeight = 30;
     state->tileSize = 100;
-    state->r = 100;
     state->level = arena_alloc(&state->permanent_arena, 60*30);
 
     state->keys_down = arena_alloc(&state->permanent_arena, _NUM_KEY_CODES);
@@ -160,12 +159,13 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             Thing* bullet = &state->things[index];
             bullet->flags = IS_ACTIVE | FLAG_PROJECTILE | FLAG_CAN_MOVE;
             float angle = atan2(mouse->y - (-state->viewportY+state->things[1].y), mouse->x - (-state->viewportX+state->things[1].x));
-            bullet->vx = state->things[1].vx+ 5*cos(angle);
-            bullet->vy = state->things[1].vy+5*sin(angle);
+            bullet->vx = state->things[1].vx + 5*cos(angle);
+            bullet->vy = state->things[1].vy + 5*sin(angle);
             bullet->x = state->things[1].x;
             bullet->y = state->things[1].y;
             bullet->width=5;
             bullet->height=5;
+            bullet->projectile_counter = 500;
         }
         // TODO Don't loop through all the things probably. Or just do the swapping thing for inactive
         for(int i = 0; i < MAX_THINGS; i++) {
@@ -194,6 +194,12 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             if (flags_is_set(t->flags, FLAG_CAN_MOVE)) {
                 t->x += t->vx;
                 t->y += t->vy;
+            }
+
+            if (flags_is_set(t->flags, FLAG_PROJECTILE)) {
+                if (--t->projectile_counter <= 0) {
+                    t->flags = flags_unset(t->flags, IS_ACTIVE);
+                }
             }
         }
 
