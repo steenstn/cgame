@@ -22,7 +22,7 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 
 
-static inline bool flags_contains(u64 flags, u64 flag_to_check) {
+static inline bool flags_is_set(u64 flags, u64 flag_to_check) {
     return (flags & flag_to_check) == flag_to_check;
 }
 

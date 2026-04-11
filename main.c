@@ -46,7 +46,7 @@ int main(void) {
 
     GameMemory game_memory = {0};
     game_memory.permanent_storage_size = 1024 * 1024 * 200;
-    game_memory.permanent_storage = malloc (game_memory.permanent_storage_size);
+    game_memory.permanent_storage = malloc(game_memory.permanent_storage_size);
 
     GameState* game_state = api->init(&game_memory);
 
@@ -150,6 +150,8 @@ int main(void) {
         SDL_RenderPresent(renderer);
 
     }
+
+    free(game_memory.permanent_storage);
 
     return 0;
 }

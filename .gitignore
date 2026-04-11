@@ -2,3 +2,4 @@ game
 test
 *.so
 .nvim.lua
+.idea/

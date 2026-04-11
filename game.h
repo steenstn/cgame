@@ -3,7 +3,7 @@
 
 #include "game_engine.h"
 #include "arena.c"
-#define MAX_THINGS 100
+#define MAX_THINGS 500
 #define SCREEN_WIDTH 1400
 #define SCREEN_HEIGHT 1050
 

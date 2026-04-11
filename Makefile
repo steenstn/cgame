@@ -1,6 +1,6 @@
 .PHONY: game
 all: lsp game
-	gcc -std=c99 -Wall -Wextra main.c -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lm -o game
+	gcc -std=c99 -g -fsanitize=address -fno-omit-frame-pointer -Wall -Wextra main.c -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lm -o game
 
 lsp:
 	@awk 'BEGIN { n=0 } \
