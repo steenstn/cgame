@@ -2,26 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "game_engine.h"
 #include "game.h"
-
-#define ARRAY_INDEX(x, y, width) (x + width*y)
-#define SCANCODE_A 4
-#define SCANCODE_D 7
-#define SCANCODE_S 22
-#define SCANCODE_W 26
 
 enum Flags {
     FLAG_PLAYER_CONTROLLED = 1,
 };
-
-enum KeyCode {
-    KEY_UP,
-    KEY_LEFT,
-    KEY_DOWN,
-    KEY_RIGHT,
-    _NUM_KEY_CODES,
-};
-
 
 static GameState *init(GameMemory* gameMemory) {
 
@@ -29,7 +15,7 @@ static GameState *init(GameMemory* gameMemory) {
     if (gameMemory->is_initialized) {
         return state;
     }
-    uint8_t* arena_base = (uint8_t*)gameMemory->permanent_storage + sizeof(GameState);
+    u8* arena_base = (u8*)gameMemory->permanent_storage + sizeof(GameState);
 
     arena_init(&state->permanent_arena, arena_base, gameMemory->permanent_storage_size - sizeof(GameState));
 
@@ -125,10 +111,6 @@ static bool update_and_render(GameState* state, const uint8_t* key_states) {
         }
 
         
-// a 4
-// s 22
-// d 7
-// w 26
 
         float speed = 5.0;
                 if (key_states[SCANCODE_A]) {
