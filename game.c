@@ -204,8 +204,6 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     //---------- Render 
     memset(state->output_buffer, 0, SCREEN_WIDTH*SCREEN_HEIGHT*4);
 
-    // TODO Only render aroudn viewport, not the whole level
-//
     int counter = 0;
     int start_x = clamp(ARRAY_INDEX(state->viewportX/100, 0, 60), 0, INT_MAX);
     int end_x = clamp(ARRAY_INDEX(state->viewportX/100+SCREEN_WIDTH/100, 0, 60)+1, 0, state->levelWidth);
