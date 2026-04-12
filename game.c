@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -10,6 +11,7 @@ enum Flags {
     FLAG_PLAYER_CONTROLLED = 1<<1,
     FLAG_CAN_MOVE = 1<<2,
     FLAG_PROJECTILE = 1<<3,
+    FLAG_COLLIDES_WITH_WALL = 1<<4,
 
 };
 
@@ -95,10 +97,6 @@ static bool aabb_collision(float x1, float y1, float w1, float h1,
            x1 + w1 > x2 &&
            y1 < y2 + h2 &&
            y1 + h1 > y2;
-}
-// is this correct?
-static int clamp(int value, int min, int max) {
-    return value > min ? value < max ? value : min : max;
 }
 
 static void drawPixel(GameState* state, int x, int y, uint32_t color) {
@@ -206,15 +204,28 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     //---------- Render 
     memset(state->output_buffer, 0, SCREEN_WIDTH*SCREEN_HEIGHT*4);
 
-    // TODO Do not draw all tiles, only inside viewport
-    for(int y = 0; y < state->levelHeight; y++) {
-        for(int x = 0; x < state->levelWidth; x++) {
+    // TODO Only render aroudn viewport, not the whole level
+//
+    int counter = 0;
+    int start_x = clamp(ARRAY_INDEX(state->viewportX/100, 0, 60), 0, INT_MAX);
+    int end_x = clamp(ARRAY_INDEX(state->viewportX/100+SCREEN_WIDTH/100, 0, 60)+1, 0, state->levelWidth);
+
+    int start_y = ARRAY_INDEX(0, state->viewportY/6000, 60);
+    int end_y = clamp(ARRAY_INDEX(0, state->viewportY/6000+SCREEN_HEIGHT/100, 60)+3, 0, state->levelHeight);
+    //printf("pos: %d\n", start_y);
+    //int start_y = clamp(state->viewportY, 0, INT_MAX);
+    for(int y = start_y; y < end_y; y++) {
+        for(int x = start_x; x < end_x; x++) {
             if(state->level[ARRAY_INDEX(x, y, 60)] == '1') {
-                drawRect(state, -state->viewportX+x*100, -state->viewportY+y*100, 100, 100, 0xffffffff);
+                drawRect(state, -state->viewportX+x*100, -state->viewportY+y*100, 100, 100, 0x33333333);
+            } else if (state->level[ARRAY_INDEX(x, y, 60)] == '.') {
+                drawRect(state, -state->viewportX+x*100, -state->viewportY+y*100, 100, 100, 0x77777777);
             }
+            counter++;
         }
 
     }
+    //printf("Counter: %d\n", counter);
 
     for(int i = 1; i < MAX_THINGS; i++) {
         Thing* t = &state->things[i];

@@ -14,7 +14,7 @@ typedef struct GameMemory {
 } GameMemory;
 
 typedef struct Thing {
-    float x,y;
+    float x,y, old_x, old_y;
     float vx, vy;
     int width, height;
     int projectile_counter;

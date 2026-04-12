@@ -38,3 +38,6 @@ static inline u64 flags_flip(u64 flags, u64 flag_to_flip) {
     return flags ^ flag_to_flip;
 }
 
+static inline int clamp(int value, int min, int max) {
+    return (value < min ? min: (value > max ? max : value));
+}
