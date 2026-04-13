@@ -107,7 +107,22 @@ static void drawPixel(GameState* state, int x, int y, uint32_t color) {
     state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
 }
 
-static void drawRect(GameState* state, int _x, int _y, int width, int height, uint32_t color) {
+static void draw_rect(GameState* state, int _x, int _y, int width, int height, u32 color) {
+        int x_end = _x+width;
+        int y_end = _y+height;
+        for(int x = _x; x< x_end;x++) {
+            state->output_buffer[ARRAY_INDEX(x, _y, state->screenWidth)] = color;
+        }
+        for(int y = _y+1; y< y_end-1; y++) {
+            state->output_buffer[ARRAY_INDEX(_x, y, state->screenWidth)] = color;
+            state->output_buffer[ARRAY_INDEX(x_end, y, state->screenWidth)] = color;
+        }
+        for(int x = _x; x< x_end;x++) {
+            state->output_buffer[ARRAY_INDEX(x, y_end, state->screenWidth)] = color;
+        }
+}
+
+static void fill_rect(GameState* state, int _x, int _y, int width, int height, u32 color) {
         int x_end = _x+width;
         int y_end = _y+height;
         for(int y = _y; y < y_end; y++) {
@@ -216,9 +231,9 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     for(int y = start_y; y < end_y; y++) {
         for(int x = start_x; x < end_x; x++) {
             if(state->level[ARRAY_INDEX(x, y, 60)] == '1') {
-                drawRect(state, -state->viewportX+x*100, -state->viewportY+y*100, 100, 100, 0x33333333);
+                fill_rect(state, -state->viewportX+x*100, -state->viewportY+y*100, 100, 100, 0x33333333);
             } else if (state->level[ARRAY_INDEX(x, y, 60)] == '.') {
-                drawRect(state, -state->viewportX+x*100, -state->viewportY+y*100, 100, 100, 0x77777777);
+                fill_rect(state, -state->viewportX+x*100, -state->viewportY+y*100, 100, 100, 0x77777777);
             }
             counter++;
         }
@@ -235,13 +250,11 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         if (flags_is_set(t->flags, FLAG_PROJECTILE)) {
             color = 0xffffffff;
         }
-        drawRect(state, -state->viewportX+t->x,-state->viewportY+t->y,t->width,t->height, color);
+        fill_rect(state, -state->viewportX+t->x,-state->viewportY+t->y,t->width,t->height, color);
     }
-
     //printf("%f\n", (float)state->permanent_arena.used/(float)state->permanent_arena.size);
-    drawRect(state, 5, 5, 1000, 10, 0xffffffff);
-    drawRect(state, 6, 6, 998, 8, 0);
-    drawRect(state, 6, 6, ((float)state->permanent_arena.used/(float)state->permanent_arena.size)*1000, 8, 0xafafafaf);
+    draw_rect(state, 5, 5, 1000, 10, 0xffffffff);
+    fill_rect(state, 6, 6, ((float)state->permanent_arena.used/(float)state->permanent_arena.size)*1000, 8, 0xafafafaf);
 
     return true;
 }
