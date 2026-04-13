@@ -1,3 +1,6 @@
+#ifndef GAME_H
+#define GAME_H
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -7,10 +10,16 @@
 #define SCREEN_WIDTH 1400
 #define SCREEN_HEIGHT 1050
 
+typedef struct PlatformAPI {
+    char* (*get_stuff)();
+} PlatformAPI;
+
 typedef struct GameMemory {
     bool is_initialized;
     void* permanent_storage;
     size_t permanent_storage_size;
+    PlatformAPI platform_api;
+
 } GameMemory;
 
 typedef struct Thing {
@@ -56,3 +65,7 @@ typedef struct GameAPI {
 
 GameAPI* get_game_api();
 
+
+void* platform_read_whole_file(char* path);
+
+#endif 

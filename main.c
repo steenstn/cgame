@@ -1,5 +1,6 @@
 // https://yakvi.github.io/handmade-hero-notes/html/day11.html
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_error.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_mouse.h>
@@ -11,6 +12,7 @@
 #include <SDL2/SDL_image.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -32,6 +34,17 @@ int getArrayIndex(int x, int y, int levelWidth, int tileWidth) {
     return xPos + yPos;
 }
 
+void* platform_read_whole_file(char* path) {
+    FILE *fp = fopen(path, "rb");
+    void* file = malloc(1024*1024);
+    fread(file, 1024*1024, 1, fp);
+    fclose(fp);
+    return file;
+}
+
+char* woop() {
+    return "yay";
+}
 int main(void) {
 
     srand(time(NULL));
@@ -39,14 +52,17 @@ int main(void) {
     game_handle = dlopen("./libgame.so", RTLD_NOW | RTLD_GLOBAL);
     if (!game_handle) {
         printf("Failed to load game.\n");
+        printf("%s\n", SDL_GetError());
         exit(1);
     }
     GameAPI* (*get_api)() = dlsym(game_handle, "get_game_api");
     GameAPI* api = get_api();
 
+
     GameMemory game_memory = {0};
-    game_memory.permanent_storage_size = 1024 * 1024 * 200;
+    game_memory.permanent_storage_size = 1024 * 1024 * 10;
     game_memory.permanent_storage = malloc(game_memory.permanent_storage_size);
+    game_memory.platform_api.get_stuff = woop;
 
     GameState* game_state = api->init(&game_memory);
 

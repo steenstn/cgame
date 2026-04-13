@@ -31,6 +31,8 @@ static GameState *init(GameMemory* gameMemory) {
     if (gameMemory->is_initialized) {
         return state;
     }
+
+    printf("works? %s\n",gameMemory->platform_api.get_stuff());
     u8* arena_base = (u8*)gameMemory->permanent_storage + sizeof(GameState);
 
     arena_init(&state->permanent_arena, arena_base, gameMemory->permanent_storage_size - sizeof(GameState));
@@ -88,6 +90,8 @@ static GameState *init(GameMemory* gameMemory) {
 
         }
     }
+
+
     return state;
 }
 
@@ -104,7 +108,6 @@ static void drawPixel(GameState* state, int x, int y, uint32_t color) {
 }
 
 static void drawRect(GameState* state, int _x, int _y, int width, int height, uint32_t color) {
-        int failsafe = 0;
         int x_end = _x+width;
         int y_end = _y+height;
         for(int y = _y; y < y_end; y++) {
@@ -114,10 +117,6 @@ static void drawRect(GameState* state, int _x, int _y, int width, int height, ui
             for(int x = _x; x < x_end; x++) {
                 if (x<0 || x>=state->screenWidth) {
                     continue;
-                }
-                if(++failsafe> 10000) {
-                    printf("Too many draw calls\n");
-                    return;
                 }
                 state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
             }
@@ -132,6 +131,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             printf("state->keys_down[%d]: %d\n",i, state->keys_down[i]);
         }*/
 
+    /*
         for(int i = 0; i < 512; i++) {
             if (key_states[i]) {
 
@@ -139,6 +139,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             printf("%d: %d\n", i, key_states[i]);
             }
         }
+        */
 
 
         float speed = 5.0;
@@ -236,6 +237,11 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         }
         drawRect(state, -state->viewportX+t->x,-state->viewportY+t->y,t->width,t->height, color);
     }
+
+    //printf("%f\n", (float)state->permanent_arena.used/(float)state->permanent_arena.size);
+    drawRect(state, 5, 5, 1000, 10, 0xffffffff);
+    drawRect(state, 6, 6, 998, 8, 0);
+    drawRect(state, 6, 6, ((float)state->permanent_arena.used/(float)state->permanent_arena.size)*1000, 8, 0xafafafaf);
 
     return true;
 }
