@@ -36,6 +36,10 @@ int getArrayIndex(int x, int y, int levelWidth, int tileWidth) {
 
 void* platform_read_whole_file(char* path) {
     FILE *fp = fopen(path, "rb");
+    if (fp == NULL) {
+        printf("Failed to load %s\n", path);
+        exit(1);
+    }
     void* file = malloc(1024*1024);
     fread(file, 1024*1024, 1, fp);
     fclose(fp);
@@ -63,6 +67,7 @@ int main(void) {
     game_memory.permanent_storage_size = 1024 * 1024 * 10;
     game_memory.permanent_storage = malloc(game_memory.permanent_storage_size);
     game_memory.platform_api.get_stuff = woop;
+    game_memory.platform_api.read_whole_file = platform_read_whole_file;
 
     GameState* game_state = api->init(&game_memory);
 

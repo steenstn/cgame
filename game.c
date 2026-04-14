@@ -72,6 +72,10 @@ static GameState *init(GameMemory* gameMemory) {
     state->keys_down[KEY_RIGHT] = SCANCODE_D;
     state->keys_down[KEY_SHIFT] = SCANCODE_LSHIFT;
 
+    state->image = gameMemory->platform_api.read_whole_file("test.bmp");
+    state->image2 = gameMemory->platform_api.read_whole_file("test2.bmp");
+    state->image3 = gameMemory->platform_api.read_whole_file("font.bmp");
+
     state->output_buffer = arena_alloc(&state->permanent_arena, state->screenHeight*state->screenWidth*4);
 
     u8* level = state->level;
@@ -119,6 +123,54 @@ static void draw_rect(GameState* state, int _x, int _y, int width, int height, u
         }
         for(int x = _x; x< x_end;x++) {
             state->output_buffer[ARRAY_INDEX(x, y_end, state->screenWidth)] = color;
+        }
+}
+
+static void draw_partial_image(GameState* state, u8* image, int image_x, int image_y, int from_width, int from_height, int _x, int _y, int image_width, int image_height) {
+        int x_end = image_x+from_width;
+        int y_end = image_y+from_height;
+        int out_y = y_end;
+        for(int y = 8; y >0; y--) {
+            int out_x = _x;
+            if(y <0 || y >= state->screenHeight) {
+                continue;
+            }
+            for(int x = 0; x < 10; x++) {
+                if (x<0 || x>=state->screenWidth) {
+                    continue;
+                }
+                int i = 138+ARRAY_INDEX(x, y, image_width);
+                u8 b = image[i];
+                u8 g = image[i+1];
+                u8 r = image[i+2];
+                u32 color = 0xff000000 | (b << 16) | (g << 8) | r;
+                state->output_buffer[ARRAY_INDEX(700, 700, state->screenWidth)] = color;
+                i+=3;
+                out_x++;
+            }
+            out_y--;
+        }
+}
+
+static void draw_image(GameState* state, u8* image, int _x, int _y, int image_width, int image_height) {
+        int x_end = _x+image_width;
+        int y_end = _y+image_height;
+        int i = 138;
+        for(int y = y_end; y >_y; y--) {
+            if(y <0 || y >= state->screenHeight) {
+                continue;
+            }
+            for(int x = _x; x < x_end; x++) {
+                if (x<0 || x>=state->screenWidth) {
+                    continue;
+                }
+                u8 b = image[i];
+                u8 g = image[i+1];
+                u8 r = image[i+2];
+                u32 color = 0xff000000 | (b << 16) | (g << 8) | r;
+                state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
+                i+=3;
+            }
         }
 }
 
@@ -217,6 +269,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             }
         }
 
+        state->things[2].y=200;
     //---------- Render 
     memset(state->output_buffer, 0, SCREEN_WIDTH*SCREEN_HEIGHT*4);
 
@@ -240,6 +293,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
 
     }
     //printf("Counter: %d\n", counter);
+        draw_rect(state, state->mouse_state.x, state->mouse_state.y, 50, 50, 0xff0000ff);
 
     for(int i = 1; i < MAX_THINGS; i++) {
         Thing* t = &state->things[i];
@@ -256,6 +310,13 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     draw_rect(state, 5, 5, 1000, 10, 0xffffffff);
     fill_rect(state, 6, 6, ((float)state->permanent_arena.used/(float)state->permanent_arena.size)*1000, 8, 0xafafafaf);
 
+    u8* image = state->image;
+    u8* image2 = state->image2;
+    u8* image3 = state->image3;
+    draw_image(state, image, 300, 300, 100, 100);
+    draw_image(state, image2, 450, 300, 100, 100);
+    draw_image(state, image3, 450, 500, 240, 8);
+    draw_partial_image(state, image3,0,0,10,8, 600,600,240,8);
     return true;
 }
 

@@ -12,6 +12,7 @@
 
 typedef struct PlatformAPI {
     char* (*get_stuff)();
+    void* (*read_whole_file)(char* path);
 } PlatformAPI;
 
 typedef struct GameMemory {
@@ -51,6 +52,9 @@ typedef struct GameState {
     int screenHeight;
     int viewportX;
     int viewportY;
+    void* image;
+    void* image2;
+    void* image3;
 
     uint8_t* keys_down;
     MouseState mouse_state;
