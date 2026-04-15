@@ -12,7 +12,6 @@ enum Flags {
     FLAG_CAN_MOVE = 1<<2,
     FLAG_PROJECTILE = 1<<3,
     FLAG_COLLIDES_WITH_WALL = 1<<4,
-
 };
 
 
@@ -33,9 +32,11 @@ static GameState *init(GameMemory* gameMemory) {
     }
 
     printf("works? %s\n",gameMemory->platform_api.get_stuff());
+
     u8* arena_base = (u8*)gameMemory->permanent_storage + sizeof(GameState);
 
     arena_init(&state->permanent_arena, arena_base, gameMemory->permanent_storage_size - sizeof(GameState));
+    arena_init(&state->frame_arena, gameMemory->transient_storage, gameMemory->transient_storage_size);
 
     state->things = arena_alloc(&state->permanent_arena, sizeof(Thing)*MAX_THINGS);
     for(int i = 0; i < MAX_THINGS; i++) {
@@ -72,11 +73,14 @@ static GameState *init(GameMemory* gameMemory) {
     state->keys_down[KEY_RIGHT] = SCANCODE_D;
     state->keys_down[KEY_SHIFT] = SCANCODE_LSHIFT;
 
-    state->image = gameMemory->platform_api.read_whole_file("test.bmp");
+    state->image = gameMemory->platform_api.read_whole_file("wilber.bmp");
     state->image2 = gameMemory->platform_api.read_whole_file("test2.bmp");
     state->image3 = gameMemory->platform_api.read_whole_file("font.bmp");
 
     state->output_buffer = arena_alloc(&state->permanent_arena, state->screenHeight*state->screenWidth*4);
+    state->render_command_buffer.capacity = 1000;
+    state->render_command_buffer.buffer = arena_alloc(&state->frame_arena, sizeof(RenderCommand) * state->render_command_buffer.capacity);
+    state->render_command_buffer.count = 0;
 
     u8* level = state->level;
     int level_width = state->levelWidth;
@@ -129,26 +133,25 @@ static void draw_rect(GameState* state, int _x, int _y, int width, int height, u
 static void draw_partial_image(GameState* state, u8* image, int image_x, int image_y, int from_width, int from_height, int _x, int _y, int image_width, int image_height) {
         int x_end = image_x+from_width;
         int y_end = image_y+from_height;
-        int out_y = y_end;
-        for(int y = 8; y >0; y--) {
+        int out_y = _y;
+        for(int y = y_end; y >=0; y--) {
             int out_x = _x;
-            if(y <0 || y >= state->screenHeight) {
+            if(out_y <0 || out_y >= state->screenHeight) {
                 continue;
             }
-            for(int x = 0; x < 10; x++) {
-                if (x<0 || x>=state->screenWidth) {
+            for(int x = image_x; x < x_end; x++) {
+                if (out_x<0 || out_x>=state->screenWidth) {
                     continue;
                 }
-                int i = 138+ARRAY_INDEX(x, y, image_width);
+                int i = 138+ARRAY_INDEX(x, y, image_width)*3;
                 u8 b = image[i];
                 u8 g = image[i+1];
                 u8 r = image[i+2];
                 u32 color = 0xff000000 | (b << 16) | (g << 8) | r;
-                state->output_buffer[ARRAY_INDEX(700, 700, state->screenWidth)] = color;
-                i+=3;
+                if (color != 0xff000000) state->output_buffer[ARRAY_INDEX(out_x, out_y, state->screenWidth)] = color;
                 out_x++;
             }
-            out_y--;
+            out_y++;
         }
 }
 
@@ -156,7 +159,7 @@ static void draw_image(GameState* state, u8* image, int _x, int _y, int image_wi
         int x_end = _x+image_width;
         int y_end = _y+image_height;
         int i = 138;
-        for(int y = y_end; y >_y; y--) {
+        for(int y = y_end; y >=_y-1; y--) {
             if(y <0 || y >= state->screenHeight) {
                 continue;
             }
@@ -168,13 +171,170 @@ static void draw_image(GameState* state, u8* image, int _x, int _y, int image_wi
                 u8 g = image[i+1];
                 u8 r = image[i+2];
                 u32 color = 0xff000000 | (b << 16) | (g << 8) | r;
-                state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
+                if (color != 0xff000000)state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
                 i+=3;
             }
         }
 }
 
+typedef struct text_pos {int x, y;} text_pos;
+static void draw_text(GameState *state, u8* image, char* text, int x, int y) {
+    text_pos start_pos= {};
+    int index = 0;
+    int drawing_x = x;
+    int character_width = 8;
+    while(text[index]!='\0') {
+        switch (text[index]) {
+            case 'A':
+            case 'a':
+                start_pos = (text_pos){0,0};
+            break;
+            case 'B':
+            case 'b':
+                start_pos = (text_pos){character_width*1,0};
+            break;
+            case 'C':
+            case 'c':
+                start_pos = (text_pos){character_width*2,0};
+            break;
+            case 'D':
+            case 'd':
+                start_pos = (text_pos){character_width*3,0};
+            break;
+            case 'E':
+            case 'e':
+                start_pos = (text_pos){character_width*4,0};
+            break;
+            case 'F':
+            case 'f':
+                start_pos = (text_pos){character_width*5,0};
+            break;
+            case 'G':
+            case 'g':
+                start_pos = (text_pos){character_width*6,0};
+            break;
+            case 'H':
+            case 'h':
+                start_pos = (text_pos){character_width*7,0};
+            break;
+            case 'I':
+            case 'i':
+                start_pos = (text_pos){character_width*8,0};
+            break;
+            case 'J':
+            case 'j':
+                start_pos = (text_pos){character_width*9,0};
+            break;
+            case 'K':
+            case 'k':
+                start_pos = (text_pos){character_width*10,0};
+            break;
+            case 'L':
+            case 'l':
+                start_pos = (text_pos){character_width*11,0};
+            break;
+            case 'M':
+            case 'm':
+                start_pos = (text_pos){character_width*12,0};
+            break;
+            case 'N':
+            case 'n':
+                start_pos = (text_pos){character_width*13,0};
+            break;
+            case 'O':
+            case 'o':
+                start_pos = (text_pos){character_width*14,0};
+            break;
+            case 'P':
+            case 'p':
+                start_pos = (text_pos){character_width*15,0};
+            break;
+            case 'Q':
+            case 'q':
+                start_pos = (text_pos){character_width*16,0};
+            break;
+            case 'R':
+            case 'r':
+                start_pos = (text_pos){character_width*17,0};
+            break;
+            case 'S':
+            case 's':
+                start_pos = (text_pos){character_width*18,0};
+            break;
+            case 'T':
+            case 't':
+                start_pos = (text_pos){character_width*19,0};
+            break;
+            case 'U':
+            case 'u':
+                start_pos = (text_pos){character_width*20,0};
+            break;
+            case 'V':
+            case 'v':
+                start_pos = (text_pos){character_width*21,0};
+            break;
+            case 'W':
+            case 'w':
+                start_pos = (text_pos){character_width*22,0};
+            break;
+            case 'X':
+            case 'x':
+                start_pos = (text_pos){character_width*23,0};
+            break;
+            case 'Y':
+            case 'y':
+                start_pos = (text_pos){character_width*24,0};
+            break;
+            case 'Z':
+            case 'z':
+                start_pos = (text_pos){character_width*25,0};
+            break;
+            case '.':
+                start_pos = (text_pos){character_width*26,0};
+            break;
+            case ':':
+                start_pos = (text_pos){character_width*27,0};
+            break;
+            case '=':
+                start_pos = (text_pos){character_width*28,0};
+            break;
+            case ' ':
+                start_pos = (text_pos){character_width*29,0};
+            break;
+        }
+        draw_partial_image(state, image, start_pos.x, start_pos.y, 8, 10, drawing_x, y, 240, 20);
+        index++;
+        drawing_x+=11;
+    
+    }
+
+}
+static void render_command_push_fill_rect(RenderCommands* buffer, int x, int y, int w, int h) {
+        RenderCommand* cmd = &buffer->buffer[buffer->count++];
+        cmd->type = RC_FILL_RECT;
+        cmd->data.fill_rect.x = x;
+        cmd->data.fill_rect.y = y;
+        cmd->data.fill_rect.w = w;
+        cmd->data.fill_rect.h = h;
+}
+
+static void render_command_push_clear(RenderCommands* buffer) {
+        RenderCommand* cmd = &buffer->buffer[buffer->count++];
+        cmd->type = RC_CLEAR;
+}
+
+static void render_command_push_draw_rect(RenderCommands* buffer, int x, int y, int w, int h) {
+        RenderCommand* cmd = &buffer->buffer[buffer->count++];
+        cmd->type = RC_DRAW_RECT;
+        cmd->data.fill_rect.x = x;
+        cmd->data.fill_rect.y = y;
+        cmd->data.fill_rect.w = w;
+        cmd->data.fill_rect.h = h;
+}
+
 static void fill_rect(GameState* state, int _x, int _y, int width, int height, u32 color) {
+        //state->render_command_buffer.buffer[state->render_command_buffer.length++] = *(RenderCommand*)arena_alloc(&state->frame_arena, sizeof(RenderCommand));
+        render_command_push_fill_rect(&state->render_command_buffer, _x, _y, width, height);
         int x_end = _x+width;
         int y_end = _y+height;
         for(int y = _y; y < y_end; y++) {
@@ -192,6 +352,7 @@ static void fill_rect(GameState* state, int _x, int _y, int width, int height, u
 
 
 static bool update_and_render(GameState* state, const u8* key_states) {
+    state->render_command_buffer.count = 0;
         /*for(int i = 0; i < _NUM_KEY_CODES; i++) {
             printf("lol: %d", key_states[i]);
             state->keys_down[i] = key_states[state->keys_down[i]];
@@ -271,6 +432,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
 
         state->things[2].y=200;
     //---------- Render 
+    render_command_push_clear(&state->render_command_buffer);
     memset(state->output_buffer, 0, SCREEN_WIDTH*SCREEN_HEIGHT*4);
 
     int counter = 0;
@@ -307,16 +469,21 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         fill_rect(state, -state->viewportX+t->x,-state->viewportY+t->y,t->width,t->height, color);
     }
     //printf("%f\n", (float)state->permanent_arena.used/(float)state->permanent_arena.size);
-    draw_rect(state, 5, 5, 1000, 10, 0xffffffff);
-    fill_rect(state, 6, 6, ((float)state->permanent_arena.used/(float)state->permanent_arena.size)*1000, 8, 0xafafafaf);
+    draw_rect(state, 10, 5, 1000, 10, 0xffffffff);
+    fill_rect(state, 11, 6, ((float)state->permanent_arena.used/(float)state->permanent_arena.size)*1000, 8, 0xafafafaf);
+    draw_rect(state, 10, 20, 1000, 10, 0xffffffff);
+    fill_rect(state, 11, 21, ((float)state->frame_arena.used/(float)state->frame_arena.size)*1000, 8, 0xafafafaf);
+    draw_rect(state, 10, 30, 1000, 10, 0xffffffff);
+    fill_rect(state, 11, 31, ((float)state->render_command_buffer.count/(float)state->render_command_buffer.capacity)*1000, 8, 0xafafafaf);
 
     u8* image = state->image;
     u8* image2 = state->image2;
     u8* image3 = state->image3;
-    draw_image(state, image, 300, 300, 100, 100);
-    draw_image(state, image2, 450, 300, 100, 100);
-    draw_image(state, image3, 450, 500, 240, 8);
-    draw_partial_image(state, image3,0,0,10,8, 600,600,240,8);
+    //draw_image(state, image, 300, 300, 500, 500);
+    //draw_image(state, image2, 450, 300, 100, 100);
+    draw_image(state, image3, 450, 550, 240, 8);
+    draw_partial_image(state, image3,0,0,8,10, 700,600,240,20);
+    draw_text(state, image3, "hello", 200,500);
     return true;
 }
 

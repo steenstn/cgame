@@ -66,6 +66,8 @@ int main(void) {
     GameMemory game_memory = {0};
     game_memory.permanent_storage_size = 1024 * 1024 * 10;
     game_memory.permanent_storage = malloc(game_memory.permanent_storage_size);
+    game_memory.transient_storage_size = 1024 * 1024 * 2;
+    game_memory.transient_storage = malloc(game_memory.transient_storage_size);
     game_memory.platform_api.get_stuff = woop;
     game_memory.platform_api.read_whole_file = platform_read_whole_file;
 
@@ -87,13 +89,13 @@ int main(void) {
 
     //SDL_ShowCursor(SDL_DISABLE);
 
-    SDL_Window* window = SDL_CreateWindow("SDL tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
-
+    SDL_Window* window = SDL_CreateWindow("SDL tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth*2, screenHeight*2, SDL_WINDOW_SHOWN);
     if (window == NULL) {
         printf("Window could not be created: %s\n", SDL_GetError());
         exit(1);
     }
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
     SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, screenWidth, screenHeight);
 
     SDL_Event e;

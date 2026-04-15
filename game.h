@@ -7,8 +7,8 @@
 #include "game_engine.h"
 #include "arena.c"
 #define MAX_THINGS 500
-#define SCREEN_WIDTH 1400
-#define SCREEN_HEIGHT 1050
+#define SCREEN_WIDTH 1366
+#define SCREEN_HEIGHT 768
 
 typedef struct PlatformAPI {
     char* (*get_stuff)();
@@ -19,6 +19,8 @@ typedef struct GameMemory {
     bool is_initialized;
     void* permanent_storage;
     size_t permanent_storage_size;
+    void* transient_storage;
+    size_t transient_storage_size;
     PlatformAPI platform_api;
 
 } GameMemory;
@@ -40,8 +42,29 @@ typedef struct MouseState {
 } MouseState;
 
  
+typedef enum {
+    RC_CLEAR,
+    RC_FILL_RECT,
+    RC_DRAW_RECT,
+    RC_DRAW_IMAGE,
+} RenderCommandType;
+
+typedef struct {
+    RenderCommandType type;
+    union {
+        struct {int x, y, w, h; u32 color;} fill_rect;
+        struct {int index, x, y;} draw_image;
+    } data;
+} RenderCommand;
+
+typedef struct RenderCommands {
+    int count;
+    int capacity;
+    RenderCommand* buffer;
+} RenderCommands;
 typedef struct GameState {
     Arena permanent_arena;
+    Arena frame_arena;
 
     Thing* things;
     uint8_t* level;
@@ -59,6 +82,7 @@ typedef struct GameState {
     uint8_t* keys_down;
     MouseState mouse_state;
     uint32_t* output_buffer;
+    RenderCommands render_command_buffer;
 } GameState;
 
 

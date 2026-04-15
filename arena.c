@@ -1,3 +1,4 @@
+#include "game.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -26,6 +27,9 @@ void* arena_alloc(Arena *arena, size_t size) {
     arena->used += aligned_size;
     return result;
 }
+
+//void* arena_push(Arena *arena, RenderCommand *command) {
+//}
 
 void arena_clear(Arena *arena) {
     arena->used = 0;
