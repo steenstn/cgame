@@ -115,7 +115,18 @@ static void drawPixel(GameState* state, int x, int y, uint32_t color) {
     state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
 }
 
+static void render_command_push_draw_rect(RenderCommands* buffer, int x, int y, int w, int h, u32 color) {
+        RenderCommand* cmd = &buffer->buffer[buffer->count++];
+        cmd->type = RC_DRAW_RECT;
+        cmd->data.fill_rect.x = x;
+        cmd->data.fill_rect.y = y;
+        cmd->data.fill_rect.w = w;
+        cmd->data.fill_rect.h = h;
+        cmd->data.fill_rect.color = color;
+}
+
 static void draw_rect(GameState* state, int _x, int _y, int width, int height, u32 color) {
+        render_command_push_draw_rect(&state->render_command_buffer, _x, _y, width, height, color);
         int x_end = _x+width;
         int y_end = _y+height;
         for(int x = _x; x< x_end;x++) {
@@ -309,13 +320,14 @@ static void draw_text(GameState *state, u8* image, char* text, int x, int y) {
     }
 
 }
-static void render_command_push_fill_rect(RenderCommands* buffer, int x, int y, int w, int h) {
+static void render_command_push_fill_rect(RenderCommands* buffer, int x, int y, int w, int h, u32 color) {
         RenderCommand* cmd = &buffer->buffer[buffer->count++];
         cmd->type = RC_FILL_RECT;
         cmd->data.fill_rect.x = x;
         cmd->data.fill_rect.y = y;
         cmd->data.fill_rect.w = w;
         cmd->data.fill_rect.h = h;
+        cmd->data.fill_rect.color = color;
 }
 
 static void render_command_push_clear(RenderCommands* buffer) {
@@ -323,18 +335,10 @@ static void render_command_push_clear(RenderCommands* buffer) {
         cmd->type = RC_CLEAR;
 }
 
-static void render_command_push_draw_rect(RenderCommands* buffer, int x, int y, int w, int h) {
-        RenderCommand* cmd = &buffer->buffer[buffer->count++];
-        cmd->type = RC_DRAW_RECT;
-        cmd->data.fill_rect.x = x;
-        cmd->data.fill_rect.y = y;
-        cmd->data.fill_rect.w = w;
-        cmd->data.fill_rect.h = h;
-}
 
 static void fill_rect(GameState* state, int _x, int _y, int width, int height, u32 color) {
         //state->render_command_buffer.buffer[state->render_command_buffer.length++] = *(RenderCommand*)arena_alloc(&state->frame_arena, sizeof(RenderCommand));
-        render_command_push_fill_rect(&state->render_command_buffer, _x, _y, width, height);
+        render_command_push_fill_rect(&state->render_command_buffer, _x, _y, width, height, color);
         int x_end = _x+width;
         int y_end = _y+height;
         for(int y = _y; y < y_end; y++) {

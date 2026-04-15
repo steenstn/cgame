@@ -95,7 +95,8 @@ int main(void) {
         exit(1);
     }
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
+    SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
+   
     SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, screenWidth, screenHeight);
 
     SDL_Event e;
@@ -162,14 +163,48 @@ SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
             api->update_and_render(game_state, key_states);
         }
 
-        void* pixels;
-        int pitch;
-        SDL_LockTexture(texture, NULL, &pixels, &pitch);
+        int num_commands = game_state->render_command_buffer.count;
+        for(int i = 0; i < num_commands; i++) {
+            RenderCommand command = game_state->render_command_buffer.buffer[i];
+            switch(command.type) {
+                case RC_CLEAR: 
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  
+                    SDL_RenderClear(renderer);
+                break;
+                case RC_FILL_RECT:
+                    SDL_SetRenderDrawColor(renderer, 
+                        (command.data.fill_rect.color) & 0xFF,          
+                        (command.data.fill_rect.color >> 8) & 0xFF,     
+                        (command.data.fill_rect.color >> 16) & 0xFF,   
+                        (command.data.fill_rect.color >> 24) & 0xFF   
+                    );
+                    SDL_Rect test_rect = {command.data.fill_rect.x, command.data.fill_rect.y, command.data.fill_rect.w, command.data.fill_rect.h};  
+                    SDL_RenderFillRect(renderer, &test_rect);
+                break;
+                case RC_DRAW_RECT:
+                    SDL_SetRenderDrawColor(renderer, 
+                        (command.data.fill_rect.color) & 0xFF,      
+                        (command.data.fill_rect.color >> 8) & 0xFF,
+                        (command.data.fill_rect.color >> 16) & 0xFF,
+                        (command.data.fill_rect.color >> 24) & 0xFF
+                    );
+                    SDL_Rect draw_rect = {command.data.fill_rect.x, command.data.fill_rect.y, command.data.fill_rect.w, command.data.fill_rect.h}; 
+                    SDL_RenderDrawRect(renderer, &draw_rect);
+                break;
 
-        memcpy(pixels, game_state->output_buffer, screenWidth*screenHeight*4);
-        SDL_UnlockTexture(texture);
-        SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
+                case RC_DRAW_IMAGE:
+                  break;
+                }
+        }
+        // Clear the screen first
+        //void* pixels;
+        //int pitch;
+        //SDL_LockTexture(texture, NULL, &pixels, &pitch);
+
+        //memcpy(pixels, game_state->output_buffer, screenWidth*screenHeight*4);
+        //SDL_UnlockTexture(texture);
+        //SDL_RenderClear(renderer);
+        //SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
 
     }
