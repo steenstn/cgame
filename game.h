@@ -91,7 +91,6 @@ typedef struct GameState {
 
     uint8_t* keys_down;
     MouseState mouse_state;
-    uint32_t* output_buffer;
     RenderCommands render_command_buffer;
 } GameState;
 

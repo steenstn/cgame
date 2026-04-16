@@ -21,13 +21,6 @@
 
 #include "game.h"
 
-
-typedef struct Vec2 {
-    float x;
-    float y;
-} Vec2;
-
-
 typedef struct Textures {
     int count;
     SDL_Texture** textures;

@@ -81,7 +81,6 @@ static GameState *init(GameMemory* gameMemory) {
     state->image2 = gameMemory->platform_api.read_whole_file("test2.bmp");
     state->image3 = gameMemory->platform_api.read_whole_file("font.bmp");
 
-    state->output_buffer = arena_alloc(&state->permanent_arena, state->screenHeight*state->screenWidth*4);
     state->render_command_buffer.capacity = 1000;
     state->render_command_buffer.buffer = arena_alloc(&state->frame_arena, sizeof(RenderCommand) * state->render_command_buffer.capacity);
     state->render_command_buffer.count = 0;
@@ -113,10 +112,6 @@ static bool aabb_collision(float x1, float y1, float w1, float h1,
            x1 + w1 > x2 &&
            y1 < y2 + h2 &&
            y1 + h1 > y2;
-}
-
-static void drawPixel(GameState* state, int x, int y, uint32_t color) {
-    state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
 }
 
 static void render_command_push_draw_rect(RenderCommands* buffer, int x, int y, int w, int h, u32 color) {
@@ -153,204 +148,23 @@ static void render_command_push_draw_partial_image(RenderCommands* buffer, Image
     cmd->data.draw_image.image = image.image;
 }
 
-// TODO 
 static void draw_rect(GameState* state, int _x, int _y, int width, int height, u32 color) {
         render_command_push_draw_rect(&state->render_command_buffer, _x, _y, width, height, color);
-        int x_end = _x+width;
-        int y_end = _y+height;
-        for(int x = _x; x< x_end;x++) {
-            state->output_buffer[ARRAY_INDEX(x, _y, state->screenWidth)] = color;
-        }
-        for(int y = _y+1; y< y_end-1; y++) {
-            state->output_buffer[ARRAY_INDEX(_x, y, state->screenWidth)] = color;
-            state->output_buffer[ARRAY_INDEX(x_end, y, state->screenWidth)] = color;
-        }
-        for(int x = _x; x< x_end;x++) {
-            state->output_buffer[ARRAY_INDEX(x, y_end, state->screenWidth)] = color;
-        }
 }
 
 static void draw_cropped_image(GameState* state, u8* image, int image_x, int image_y, int from_width, int from_height, int _x, int _y, int image_width, int image_height) {
         render_command_push_draw_partial_image(&state->render_command_buffer, state->image_list[0], image_x, image_y, from_width, from_height, _x, _y);
-        int x_end = image_x+from_width;
-        int y_end = image_y+from_height;
-        int out_y = _y;
-        for(int y = y_end; y >=0; y--) {
-            int out_x = _x;
-            if(out_y <0 || out_y >= state->screenHeight) {
-                continue;
-            }
-            for(int x = image_x; x < x_end; x++) {
-                if (out_x<0 || out_x>=state->screenWidth) {
-                    continue;
-                }
-                int i = 138+ARRAY_INDEX(x, y, image_width)*3;
-                u8 b = image[i];
-                u8 g = image[i+1];
-                u8 r = image[i+2];
-                u32 color = 0xff000000 | (b << 16) | (g << 8) | r;
-                if (color != 0xff000000) state->output_buffer[ARRAY_INDEX(out_x, out_y, state->screenWidth)] = color;
-                out_x++;
-            }
-            out_y++;
-        }
 }
 
 static void draw_image(GameState* state, u8* image, int _x, int _y, int image_width, int image_height) {
         render_command_push_draw_image(&state->render_command_buffer, state->image_list[0], _x, _y);
-        int x_end = _x+image_width;
-        int y_end = _y+image_height;
-        int i = 138;
-        for(int y = y_end; y >=_y-1; y--) {
-            if(y <0 || y >= state->screenHeight) {
-                continue;
-            }
-            for(int x = _x; x < x_end; x++) {
-                if (x<0 || x>=state->screenWidth) {
-                    continue;
-                }
-                u8 b = image[i];
-                u8 g = image[i+1];
-                u8 r = image[i+2];
-                u32 color = 0xff000000 | (b << 16) | (g << 8) | r;
-                if (color != 0xff000000)state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
-                i+=3;
-            }
-        }
 }
 
 typedef struct text_pos {int x, y;} text_pos;
 static void draw_text(GameState *state, u8* image, char* text, int x, int y) {
-    text_pos start_pos= {};
-    int index = 0;
-    int drawing_x = x;
-    int character_width = 8;
-    while(text[index]!='\0') {
-        switch (text[index]) {
-            case 'A':
-            case 'a':
-                start_pos = (text_pos){0,0};
-            break;
-            case 'B':
-            case 'b':
-                start_pos = (text_pos){character_width*1,0};
-            break;
-            case 'C':
-            case 'c':
-                start_pos = (text_pos){character_width*2,0};
-            break;
-            case 'D':
-            case 'd':
-                start_pos = (text_pos){character_width*3,0};
-            break;
-            case 'E':
-            case 'e':
-                start_pos = (text_pos){character_width*4,0};
-            break;
-            case 'F':
-            case 'f':
-                start_pos = (text_pos){character_width*5,0};
-            break;
-            case 'G':
-            case 'g':
-                start_pos = (text_pos){character_width*6,0};
-            break;
-            case 'H':
-            case 'h':
-                start_pos = (text_pos){character_width*7,0};
-            break;
-            case 'I':
-            case 'i':
-                start_pos = (text_pos){character_width*8,0};
-            break;
-            case 'J':
-            case 'j':
-                start_pos = (text_pos){character_width*9,0};
-            break;
-            case 'K':
-            case 'k':
-                start_pos = (text_pos){character_width*10,0};
-            break;
-            case 'L':
-            case 'l':
-                start_pos = (text_pos){character_width*11,0};
-            break;
-            case 'M':
-            case 'm':
-                start_pos = (text_pos){character_width*12,0};
-            break;
-            case 'N':
-            case 'n':
-                start_pos = (text_pos){character_width*13,0};
-            break;
-            case 'O':
-            case 'o':
-                start_pos = (text_pos){character_width*14,0};
-            break;
-            case 'P':
-            case 'p':
-                start_pos = (text_pos){character_width*15,0};
-            break;
-            case 'Q':
-            case 'q':
-                start_pos = (text_pos){character_width*16,0};
-            break;
-            case 'R':
-            case 'r':
-                start_pos = (text_pos){character_width*17,0};
-            break;
-            case 'S':
-            case 's':
-                start_pos = (text_pos){character_width*18,0};
-            break;
-            case 'T':
-            case 't':
-                start_pos = (text_pos){character_width*19,0};
-            break;
-            case 'U':
-            case 'u':
-                start_pos = (text_pos){character_width*20,0};
-            break;
-            case 'V':
-            case 'v':
-                start_pos = (text_pos){character_width*21,0};
-            break;
-            case 'W':
-            case 'w':
-                start_pos = (text_pos){character_width*22,0};
-            break;
-            case 'X':
-            case 'x':
-                start_pos = (text_pos){character_width*23,0};
-            break;
-            case 'Y':
-            case 'y':
-                start_pos = (text_pos){character_width*24,0};
-            break;
-            case 'Z':
-            case 'z':
-                start_pos = (text_pos){character_width*25,0};
-            break;
-            case '.':
-                start_pos = (text_pos){character_width*26,0};
-            break;
-            case ':':
-                start_pos = (text_pos){character_width*27,0};
-            break;
-            case '=':
-                start_pos = (text_pos){character_width*28,0};
-            break;
-            case ' ':
-                start_pos = (text_pos){character_width*29,0};
-            break;
-        }
-        draw_cropped_image(state, image, start_pos.x, start_pos.y, 8, 10, drawing_x, y, 240, 20);
-        index++;
-        drawing_x+=11;
-    
-    }
 
 }
+
 static void render_command_push_fill_rect(RenderCommands* buffer, int x, int y, int w, int h, u32 color) {
         RenderCommand* cmd = &buffer->buffer[buffer->count++];
         cmd->type = RC_FILL_RECT;
@@ -370,19 +184,6 @@ static void render_command_push_clear(RenderCommands* buffer) {
 static void fill_rect(GameState* state, int _x, int _y, int width, int height, u32 color) {
         //state->render_command_buffer.buffer[state->render_command_buffer.length++] = *(RenderCommand*)arena_alloc(&state->frame_arena, sizeof(RenderCommand));
         render_command_push_fill_rect(&state->render_command_buffer, _x, _y, width, height, color);
-        int x_end = _x+width;
-        int y_end = _y+height;
-        for(int y = _y; y < y_end; y++) {
-            if(y <0 || y >= state->screenHeight) {
-                continue;
-            }
-            for(int x = _x; x < x_end; x++) {
-                if (x<0 || x>=state->screenWidth) {
-                    continue;
-                }
-                state->output_buffer[ARRAY_INDEX(x, y, state->screenWidth)] = color;
-            }
-        }
 }
 
 
@@ -468,7 +269,6 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         state->things[2].y=200;
     //---------- Render 
     render_command_push_clear(&state->render_command_buffer);
-    memset(state->output_buffer, 0, SCREEN_WIDTH*SCREEN_HEIGHT*4);
 
     int counter = 0;
     int start_x = clamp(ARRAY_INDEX(state->viewportX/100, 0, 60), 0, INT_MAX);
