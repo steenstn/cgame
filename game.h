@@ -10,9 +10,15 @@
 #define SCREEN_WIDTH 1366
 #define SCREEN_HEIGHT 768
 
+typedef struct Image {
+    void* image;
+    int width, height;
+} Image;
+
 typedef struct PlatformAPI {
     char* (*get_stuff)();
     void* (*read_whole_file)(char* path);
+    Image (*load_image)(char* path);
 } PlatformAPI;
 
 typedef struct GameMemory {
@@ -42,18 +48,20 @@ typedef struct MouseState {
 } MouseState;
 
  
+
 typedef enum {
     RC_CLEAR,
     RC_FILL_RECT,
     RC_DRAW_RECT,
     RC_DRAW_IMAGE,
+    RC_DRAW_CROPPED_IMAGE,
 } RenderCommandType;
 
 typedef struct {
     RenderCommandType type;
     union {
         struct {int x, y, w, h; u32 color;} fill_rect;
-        struct {int index, x, y;} draw_image;
+        struct {void* image; int index, x, y, image_x, image_y, crop_width, crop_height;} draw_image;
     } data;
 } RenderCommand;
 
@@ -62,6 +70,7 @@ typedef struct RenderCommands {
     int capacity;
     RenderCommand* buffer;
 } RenderCommands;
+
 typedef struct GameState {
     Arena permanent_arena;
     Arena frame_arena;
@@ -78,6 +87,7 @@ typedef struct GameState {
     void* image;
     void* image2;
     void* image3;
+    Image* image_list;
 
     uint8_t* keys_down;
     MouseState mouse_state;

@@ -3,3 +3,4 @@ test
 *.so
 .nvim.lua
 .idea/
+todo.md

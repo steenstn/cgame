@@ -48,7 +48,7 @@ static GameState *init(GameMemory* gameMemory) {
         state->things[i].width = 0;
         state->things[i].height = 0;
     }
-    for(int i = 1; i < 4; i++) {
+    for(int i = 1; i < 3; i++) {
         state->things[i].x = i*400;
         state->things[i].width = 20;
         state->things[i].height = 20;
@@ -73,6 +73,10 @@ static GameState *init(GameMemory* gameMemory) {
     state->keys_down[KEY_RIGHT] = SCANCODE_D;
     state->keys_down[KEY_SHIFT] = SCANCODE_LSHIFT;
 
+
+    state->image_list = arena_alloc(&state->permanent_arena, sizeof(Image) * 5);
+    Image image = gameMemory->platform_api.load_image("test2.bmp");
+    state->image_list[0] = image;
     state->image = gameMemory->platform_api.read_whole_file("wilber.bmp");
     state->image2 = gameMemory->platform_api.read_whole_file("test2.bmp");
     state->image3 = gameMemory->platform_api.read_whole_file("font.bmp");
@@ -125,6 +129,27 @@ static void render_command_push_draw_rect(RenderCommands* buffer, int x, int y, 
         cmd->data.fill_rect.color = color;
 }
 
+static void render_command_push_draw_image(RenderCommands* buffer, Image image, int x, int y) {
+    RenderCommand* cmd = &buffer->buffer[buffer->count++];
+    cmd->type = RC_DRAW_IMAGE;
+    cmd->data.draw_image.x = x;
+    cmd->data.draw_image.y = y;
+    cmd->data.draw_image.image = image.image;
+}
+
+static void render_command_push_draw_partial_image(RenderCommands* buffer, Image image, int image_x, int image_y, int partial_width, int partial_height, int x, int y) {
+    RenderCommand* cmd = &buffer->buffer[buffer->count++];
+    cmd->type = RC_DRAW_CROPPED_IMAGE;
+    cmd->data.draw_image.x = x;
+    cmd->data.draw_image.y = y;
+    cmd->data.draw_image.image_x = image_x;
+    cmd->data.draw_image.image_y = image_y;
+    cmd->data.draw_image.crop_width = partial_width;
+    cmd->data.draw_image.crop_height = partial_height;
+    cmd->data.draw_image.image = image.image;
+}
+
+// TODO 
 static void draw_rect(GameState* state, int _x, int _y, int width, int height, u32 color) {
         render_command_push_draw_rect(&state->render_command_buffer, _x, _y, width, height, color);
         int x_end = _x+width;
@@ -141,7 +166,8 @@ static void draw_rect(GameState* state, int _x, int _y, int width, int height, u
         }
 }
 
-static void draw_partial_image(GameState* state, u8* image, int image_x, int image_y, int from_width, int from_height, int _x, int _y, int image_width, int image_height) {
+static void draw_cropped_image(GameState* state, u8* image, int image_x, int image_y, int from_width, int from_height, int _x, int _y, int image_width, int image_height) {
+        render_command_push_draw_partial_image(&state->render_command_buffer, state->image_list[0], image_x, image_y, from_width, from_height, _x, _y);
         int x_end = image_x+from_width;
         int y_end = image_y+from_height;
         int out_y = _y;
@@ -167,6 +193,7 @@ static void draw_partial_image(GameState* state, u8* image, int image_x, int ima
 }
 
 static void draw_image(GameState* state, u8* image, int _x, int _y, int image_width, int image_height) {
+        render_command_push_draw_image(&state->render_command_buffer, state->image_list[0], _x, _y);
         int x_end = _x+image_width;
         int y_end = _y+image_height;
         int i = 138;
@@ -313,7 +340,7 @@ static void draw_text(GameState *state, u8* image, char* text, int x, int y) {
                 start_pos = (text_pos){character_width*29,0};
             break;
         }
-        draw_partial_image(state, image, start_pos.x, start_pos.y, 8, 10, drawing_x, y, 240, 20);
+        draw_cropped_image(state, image, start_pos.x, start_pos.y, 8, 10, drawing_x, y, 240, 20);
         index++;
         drawing_x+=11;
     
@@ -473,12 +500,12 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         fill_rect(state, -state->viewportX+t->x,-state->viewportY+t->y,t->width,t->height, color);
     }
     //printf("%f\n", (float)state->permanent_arena.used/(float)state->permanent_arena.size);
-    draw_rect(state, 10, 5, 1000, 10, 0xffffffff);
-    fill_rect(state, 11, 6, ((float)state->permanent_arena.used/(float)state->permanent_arena.size)*1000, 8, 0xafafafaf);
-    draw_rect(state, 10, 20, 1000, 10, 0xffffffff);
-    fill_rect(state, 11, 21, ((float)state->frame_arena.used/(float)state->frame_arena.size)*1000, 8, 0xafafafaf);
-    draw_rect(state, 10, 30, 1000, 10, 0xffffffff);
-    fill_rect(state, 11, 31, ((float)state->render_command_buffer.count/(float)state->render_command_buffer.capacity)*1000, 8, 0xafafafaf);
+    draw_rect(state, 100, 5, 1000, 10, 0xffffffff);
+    fill_rect(state, 101, 6, ((float)state->permanent_arena.used/(float)state->permanent_arena.size)*600, 8, 0xafafafaf);
+    draw_rect(state, 100, 20, 1000, 10, 0xffffffff);
+    fill_rect(state, 101, 21, ((float)state->frame_arena.used/(float)state->frame_arena.size)*600, 8, 0xafafafaf);
+    draw_rect(state, 100, 30, 1000, 10, 0xffffffff);
+    fill_rect(state, 101, 31, ((float)state->render_command_buffer.count/(float)state->render_command_buffer.capacity)*600, 8, 0xafafafaf);
 
     u8* image = state->image;
     u8* image2 = state->image2;
@@ -486,7 +513,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     //draw_image(state, image, 300, 300, 500, 500);
     //draw_image(state, image2, 450, 300, 100, 100);
     draw_image(state, image3, 450, 550, 240, 8);
-    draw_partial_image(state, image3,0,0,8,10, 700,600,240,20);
+    draw_cropped_image(state, image3,0,0,8,10, 700,600,240,20);
     draw_text(state, image3, "hello", 200,500);
     return true;
 }
