@@ -134,6 +134,8 @@ static void render_command_push_draw_image(RenderCommands* buffer, Image image, 
     cmd->type = RC_DRAW_IMAGE;
     cmd->data.draw_image.x = x;
     cmd->data.draw_image.y = y;
+    cmd->data.draw_image.width = image.width;
+    cmd->data.draw_image.height = image.height;
     cmd->data.draw_image.image = image.image;
 }
 
@@ -146,6 +148,8 @@ static void render_command_push_draw_partial_image(RenderCommands* buffer, Image
     cmd->data.draw_image.image_y = image_y;
     cmd->data.draw_image.crop_width = partial_width;
     cmd->data.draw_image.crop_height = partial_height;
+    cmd->data.draw_image.width = image.width;
+    cmd->data.draw_image.height = image.height;
     cmd->data.draw_image.image = image.image;
 }
 

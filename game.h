@@ -61,7 +61,7 @@ typedef struct {
     RenderCommandType type;
     union {
         struct {int x, y, w, h; u32 color;} fill_rect;
-        struct {void* image; int index, x, y, image_x, image_y, crop_width, crop_height;} draw_image;
+        struct {void* image; int index, x, y, width, height, image_x, image_y, crop_width, crop_height;} draw_image;
     } data;
 } RenderCommand;
 

@@ -212,7 +212,7 @@ int main(void) {
                     SDL_RenderDrawRect(renderer, &draw_rect);
                 break;
                 case RC_DRAW_IMAGE: {
-                    SDL_Rect image_rect = {command.data.draw_image.x, command.data.draw_image.y, 50, 50};  
+                    SDL_Rect image_rect = {command.data.draw_image.x, command.data.draw_image.y, command.data.draw_image.width, command.data.draw_image.height};  
                     SDL_RenderCopy(renderer, command.data.draw_image.image, NULL, &image_rect);
                 }
                 break;
