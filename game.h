@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "game_engine.h"
 #include "arena.c"
+
 #define MAX_THINGS 500
 #define SCREEN_WIDTH 1366
 #define SCREEN_HEIGHT 768
@@ -47,6 +47,11 @@ typedef struct MouseState {
     bool right_button_click;
 } MouseState;
 
+typedef struct KeyboardState {
+    uint8_t* keys_down;
+    uint8_t* keys_hit;
+} KeyboardState;
+
  
 
 typedef enum {
@@ -60,7 +65,7 @@ typedef enum {
 typedef struct {
     RenderCommandType type;
     union {
-        struct {int x, y, w, h; u32 color;} fill_rect;
+        struct {int x, y, w, h; uint32_t color;} fill_rect;
         struct {void* image; int index, x, y, width, height, image_x, image_y, crop_width, crop_height;} draw_image;
     } data;
 } RenderCommand;
@@ -84,12 +89,9 @@ typedef struct GameState {
     int screenHeight;
     int viewportX;
     int viewportY;
-    void* image;
-    void* image2;
-    void* image3;
     Image* image_list;
 
-    uint8_t* keys_down;
+    KeyboardState keyboard_state;
     MouseState mouse_state;
     RenderCommands render_command_buffer;
 } GameState;

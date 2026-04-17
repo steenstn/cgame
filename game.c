@@ -1,3 +1,5 @@
+#include <SDL2/SDL_keycode.h>
+#include <SDL2/SDL_scancode.h>
 #include <limits.h>
 #include <math.h>
 #include <stdint.h>
@@ -5,6 +7,8 @@
 #include <string.h>
 
 #include "game.h"
+
+#include "game_engine.h"
 
 enum Flags {
     IS_ACTIVE = 1<<0,
@@ -64,22 +68,20 @@ static GameState *init(GameMemory* gameMemory) {
     state->levelWidth = 60;
     state->levelHeight = 30;
     state->tileSize = 100;
-    state->level = arena_alloc(&state->permanent_arena, 60*30);
+    state->level = arena_alloc(&state->permanent_arena, state->levelWidth*state->levelHeight);
 
-    state->keys_down = arena_alloc(&state->permanent_arena, _NUM_KEY_CODES);
-    state->keys_down[KEY_UP] = SCANCODE_W;
-    state->keys_down[KEY_LEFT] = SCANCODE_A;
-    state->keys_down[KEY_DOWN] = SCANCODE_S;
-    state->keys_down[KEY_RIGHT] = SCANCODE_D;
-    state->keys_down[KEY_SHIFT] = SCANCODE_LSHIFT;
+    state->keyboard_state.keys_down = arena_alloc(&state->permanent_arena, _NUM_KEY_CODES);
+    state->keyboard_state.keys_hit = arena_alloc(&state->permanent_arena, SDL_NUM_SCANCODES);
+    state->keyboard_state.keys_down[KEY_UP] = SCANCODE_W;
+    state->keyboard_state.keys_down[KEY_LEFT] = SCANCODE_A;
+    state->keyboard_state.keys_down[KEY_DOWN] = SCANCODE_S;
+    state->keyboard_state.keys_down[KEY_RIGHT] = SCANCODE_D;
+    state->keyboard_state.keys_down[KEY_SHIFT] = SCANCODE_LSHIFT;
 
 
     state->image_list = arena_alloc(&state->permanent_arena, sizeof(Image) * 5);
     Image image = gameMemory->platform_api.load_image("test2.bmp");
     state->image_list[0] = image;
-    state->image = gameMemory->platform_api.read_whole_file("wilber.bmp");
-    state->image2 = gameMemory->platform_api.read_whole_file("test2.bmp");
-    state->image3 = gameMemory->platform_api.read_whole_file("font.bmp");
 
     state->render_command_buffer.capacity = 1000;
     state->render_command_buffer.buffer = arena_alloc(&state->frame_arena, sizeof(RenderCommand) * state->render_command_buffer.capacity);
@@ -102,16 +104,7 @@ static GameState *init(GameMemory* gameMemory) {
         }
     }
 
-
     return state;
-}
-
-static bool aabb_collision(float x1, float y1, float w1, float h1,
-                          float x2, float y2, float w2, float h2) {
-    return x1 < x2 + w2 &&
-           x1 + w1 > x2 &&
-           y1 < y2 + h2 &&
-           y1 + h1 > y2;
 }
 
 static void render_command_push_draw_rect(RenderCommands* buffer, int x, int y, int w, int h, u32 color) {
@@ -157,13 +150,8 @@ static void draw_cropped_image(GameState* state, u8* image, int image_x, int ima
 }
 
 static void draw_image(GameState* state, u8* image, int _x, int _y, int image_width, int image_height) {
-        render_command_push_draw_image(&state->render_command_buffer, state->image_list[0], _x, _y);
 }
 
-typedef struct text_pos {int x, y;} text_pos;
-static void draw_text(GameState *state, u8* image, char* text, int x, int y) {
-
-}
 
 static void render_command_push_fill_rect(RenderCommands* buffer, int x, int y, int w, int h, u32 color) {
         RenderCommand* cmd = &buffer->buffer[buffer->count++];
@@ -193,17 +181,17 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             printf("lol: %d", key_states[i]);
             state->keys_down[i] = key_states[state->keys_down[i]];
             printf("state->keys_down[%d]: %d\n",i, state->keys_down[i]);
-        }*/
+        }
+        */
 
-    /*
-        for(int i = 0; i < 512; i++) {
+    
+        /*for(int i = 0; i < 512; i++) {
             if (key_states[i]) {
 
             printf("Also: %d\n", (int)'a');
             printf("%d: %d\n", i, key_states[i]);
             }
-        }
-        */
+        }*/
 
 
         float speed = 5.0;
@@ -215,6 +203,9 @@ static bool update_and_render(GameState* state, const u8* key_states) {
 
         if (key_states[SCANCODE_LSHIFT]) {
             speed = 8;
+        }
+        if (state->keyboard_state.keys_hit[SDLK_TAB]) {
+            printf("lol\n");
         }
 
         if(mouse->left_button_click) {
@@ -236,6 +227,8 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             if (!flags_is_set(t->flags, IS_ACTIVE)) {
                 continue;
             }
+            t->old_x = t->x;
+            t->old_y = t->y;
 
             if(flags_is_set(t->flags, FLAG_PLAYER_CONTROLLED)) {
                     t->vx=0;
@@ -257,7 +250,32 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             if (flags_is_set(t->flags, FLAG_CAN_MOVE)) {
                 t->x += t->vx;
                 t->y += t->vy;
+
+                //TODO Funkar inte alltid, ibland fastnar man
+                if (t->vx >0) {
+                    int index = ARRAY_INDEX((int)((t->x+1)/100), (int)(t->y/100), state->levelWidth);
+                    if (state->level[index] == '1') {
+                        t->x = t->old_x;
+                    }
+                } else if (t->vx < 0) {
+                    int index = ARRAY_INDEX((int)((t->x-1)/100), (int)(t->y/100), state->levelWidth);
+                    if (state->level[index] == '1') {
+                        t->x = t->old_x;
+                    }
+                }
+                if (t->vy >0) {
+                    int index = ARRAY_INDEX((int)((t->x)/100), (int)((t->y+1)/100), state->levelWidth);
+                    if (state->level[index] == '1') {
+                        t->y = t->old_y;
+                    }
+                } else if (t->vy < 0) {
+                    int index = ARRAY_INDEX((int)((t->x)/100), (int)((t->y-1)/100), state->levelWidth);
+                    if (state->level[index] == '1') {
+                        t->y = t->old_y;
+                    }
+                }
             }
+
 
             if (flags_is_set(t->flags, FLAG_PROJECTILE)) {
                 if (--t->projectile_counter <= 0) {
@@ -271,20 +289,21 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     render_command_push_clear(&state->render_command_buffer);
 
     int counter = 0;
-    int start_x = clamp(ARRAY_INDEX(state->viewportX/100, 0, 60), 0, INT_MAX);
-    int end_x = clamp(ARRAY_INDEX(state->viewportX/100+SCREEN_WIDTH/100, 0, 60)+1, 0, state->levelWidth);
 
-    int start_y = ARRAY_INDEX(0, state->viewportY/6000, 60);
-    int end_y = clamp(ARRAY_INDEX(0, state->viewportY/6000+SCREEN_HEIGHT/100, 60)+3, 0, state->levelHeight);
+    int start_x = clamp(ARRAY_INDEX(state->viewportX/state->tileSize, 0, state->levelWidth), 0, INT_MAX);
+    int end_x = clamp(ARRAY_INDEX(state->viewportX/state->tileSize+SCREEN_WIDTH/state->tileSize, 0, state->levelWidth)+2, 0, state->levelWidth);
+
+    int start_y = ARRAY_INDEX(0, state->viewportY/(state->levelWidth*state->tileSize), state->levelWidth);
+    int end_y = clamp(ARRAY_INDEX(0, state->viewportY/state->tileSize+SCREEN_HEIGHT, state->levelWidth),0, INT_MAX );
     //printf("pos: %d\n", start_y);
     //int start_y = clamp(state->viewportY, 0, INT_MAX);
     for(int y = start_y; y < end_y; y++) {
         for(int x = start_x; x < end_x; x++) {
-            if(state->level[ARRAY_INDEX(x, y, 60)] == '1') {
-                fill_rect(state, -state->viewportX+x*100, -state->viewportY+y*100, 100, 100, 0x33333333);
-            } else if (state->level[ARRAY_INDEX(x, y, 60)] == '.') {
-                fill_rect(state, -state->viewportX+x*100, -state->viewportY+y*100, 100, 100, 0x77777777);
-            }
+            if(state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '1') {
+                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*100, 100, 100, 0x33333333);
+            } else if (state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '.') {
+                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*100, 100, 100, 0x77777777);
+            } 
             counter++;
         }
 
@@ -311,14 +330,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     draw_rect(state, 100, 30, 1000, 10, 0xffffffff);
     fill_rect(state, 101, 31, ((float)state->render_command_buffer.count/(float)state->render_command_buffer.capacity)*600, 8, 0xafafafaf);
 
-    u8* image = state->image;
-    u8* image2 = state->image2;
-    u8* image3 = state->image3;
-    //draw_image(state, image, 300, 300, 500, 500);
-    //draw_image(state, image2, 450, 300, 100, 100);
-    draw_image(state, image3, 450, 550, 240, 8);
-    draw_cropped_image(state, image3,0,0,8,10, 700,600,240,20);
-    draw_text(state, image3, "hello", 200,500);
+    render_command_push_draw_image(&state->render_command_buffer, state->image_list[0], 450, 400);
     return true;
 }
 

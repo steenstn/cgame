@@ -7,6 +7,7 @@
 #define SCANCODE_D 7
 #define SCANCODE_S 22
 #define SCANCODE_W 26
+#define SCANCODE_TAB 43
 #define SCANCODE_LSHIFT 225
 
 enum KeyCode {
@@ -43,3 +44,10 @@ static inline int clamp(int value, int min, int max) {
     return (value < min ? min: (value > max ? max : value));
 }
 
+static bool aabb_collision(float x1, float y1, float w1, float h1,
+                          float x2, float y2, float w2, float h2) {
+    return x1 < x2 + w2 &&
+           x1 + w1 > x2 &&
+           y1 < y2 + h2 &&
+           y1 + h1 > y2;
+}

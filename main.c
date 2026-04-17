@@ -3,9 +3,11 @@
 #include <SDL2/SDL_error.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keyboard.h>
+#include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_scancode.h>
 #include <SDL2/SDL_stdinc.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_video.h>
@@ -79,17 +81,16 @@ int main(void) {
     }
 
     //SDL_ShowCursor(SDL_DISABLE);
-
-    SDL_Window* window = SDL_CreateWindow("SDL tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth*2, screenHeight*2, SDL_WINDOW_SHOWN);
+    
+    float scale = 1;
+    SDL_Window* window = SDL_CreateWindow("SDL tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth*scale, screenHeight*scale, SDL_WINDOW_SHOWN);
     if (window == NULL) {
         printf("Window could not be created: %s\n", SDL_GetError());
         exit(1);
     }
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     SDL_RenderSetLogicalSize(renderer, screenWidth, screenHeight);
-   
 
-    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, screenWidth, screenHeight);
 
     SDL_Event e;
     void* game_handle = NULL;
@@ -134,12 +135,19 @@ int main(void) {
 
         game_state->mouse_state.left_button_click = false;
         game_state->mouse_state.left_button_click = false;
+
+        for(int i = 0; i < SDL_NUM_SCANCODES;i++){
+            game_state->keyboard_state.keys_hit[i] = 0;
+        }
         while(SDL_PollEvent(&e)) {
             if(e.type == SDL_QUIT) quit = true;
             if (e.type == SDL_KEYDOWN) {
                 switch (e.key.keysym.sym) {
                     case SDLK_ESCAPE:
                         quit = true;
+                    break;
+                    case SDLK_TAB:
+                        game_state->keyboard_state.keys_hit[SDLK_TAB]++;
                     break;
                 }
             }
@@ -209,10 +217,11 @@ int main(void) {
                     SDL_RenderCopy(renderer, command.data.draw_image.image, NULL, &image_rect);
                 }
                 break;
-                case RC_DRAW_CROPPED_IMAGE:
+                case RC_DRAW_CROPPED_IMAGE: {
                     SDL_Rect image_rect = {command.data.draw_image.x, command.data.draw_image.y, command.data.draw_image.crop_width, command.data.draw_image.crop_height};  
                     SDL_Rect from_rect = {command.data.draw_image.image_x, command.data.draw_image.image_y, command.data.draw_image.crop_width, command.data.draw_image.crop_height};
                     SDL_RenderCopy(renderer, command.data.draw_image.image, &from_rect, &image_rect);
+                }
                 break;
                 }
         }
