@@ -65,9 +65,11 @@ static GameState *init(GameMemory* gameMemory) {
 
     state->screenWidth = SCREEN_WIDTH;
     state->screenHeight = SCREEN_HEIGHT;
+    state->viewportX = 0;
+    state->viewportY = 0;
     state->levelWidth = 100;
     state->levelHeight = 100;
-    state->tileSize = 64;
+    state->tileSize = 32;
     state->level = arena_alloc(&state->permanent_arena, state->levelWidth*state->levelHeight);
 
     state->keyboard_state.keys_down = arena_alloc(&state->permanent_arena, _NUM_KEY_CODES);
@@ -82,7 +84,7 @@ static GameState *init(GameMemory* gameMemory) {
 
 
     state->image_list = arena_alloc(&state->permanent_arena, sizeof(Image) * 5);
-    Image image = gameMemory->platform_api.load_image("test2.bmp");
+    Image image = gameMemory->platform_api.load_image("tileset.bmp");
     state->image_list[0] = image;
 
     state->render_command_buffer.capacity = 1000;
@@ -147,8 +149,8 @@ static void draw_rect(GameState* state, int _x, int _y, int width, int height, u
         render_command_push_draw_rect(&state->render_command_buffer, _x, _y, width, height, color);
 }
 
-static void draw_cropped_image(GameState* state, u8* image, int image_x, int image_y, int from_width, int from_height, int _x, int _y, int image_width, int image_height) {
-        render_command_push_draw_partial_image(&state->render_command_buffer, state->image_list[0], image_x, image_y, from_width, from_height, _x, _y);
+static void draw_cropped_image(GameState* state, u8 image_index, int image_x, int image_y, int from_width, int from_height, int _x, int _y, int image_width, int image_height) {
+        render_command_push_draw_partial_image(&state->render_command_buffer, state->image_list[image_index], image_x, image_y, from_width, from_height, _x, _y);
 }
 
 static void draw_image(GameState* state, u8* image, int _x, int _y, int image_width, int image_height) {
@@ -348,13 +350,15 @@ static bool update_and_render(GameState* state, const u8* key_states) {
 
     for(int y = start_y; y < end_y; y++) {
         for(int x = start_x; x < end_x; x++) {
+            int drawing_x = -state->viewportX+x*state->tileSize;
+            int drawing_y = -state->viewportY+y*tile_size;
             if(state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '1') {
-                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x33333333);
+                draw_cropped_image(state, 0, (x%3)*32, 0, 32, 32, drawing_x, drawing_y, 32, 32);
+                //fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x33333333);
             } else if (state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '.') {
-                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x77777777);
-            } else if (state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '2') {
-                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0xffaa3322);
-            } 
+                draw_cropped_image(state, 0, 8*32, 7*32, 32, 32, drawing_x, drawing_y, 32, 32);
+                //fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x77777777);
+            }
             counter++;
         }
 
@@ -385,7 +389,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         fill_rect(state, 20, 20, 20, 20, 0xff73af13);
     }
 
-    render_command_push_draw_image(&state->render_command_buffer, state->image_list[0], 450, 400);
+    //render_command_push_draw_image(&state->render_command_buffer, state->image_list[0], 450, 400);
     return true;
 }
 
