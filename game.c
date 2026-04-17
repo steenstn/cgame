@@ -187,7 +187,7 @@ static void update_for_game(GameState* state, const u8* key_states) {
 
                 //TODO Funkar inte alltid, ibland fastnar man
                 if (t->vx >0) {
-                    int index = ARRAY_INDEX((int)((t->x+1)/tile_size), (int)(t->y/tile_size), state->levelWidth);
+                    int index = ARRAY_INDEX((int)((t->x+t->width)/tile_size), (int)((t->y)/tile_size), state->levelWidth);
                     if (state->level[index] == '1') {
                         t->x = t->old_x;
                     }
@@ -198,7 +198,7 @@ static void update_for_game(GameState* state, const u8* key_states) {
                     }
                 }
                 if (t->vy >0) {
-                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y+1)/tile_size), state->levelWidth);
+                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y+t->height)/tile_size), state->levelWidth);
                     if (state->level[index] == '1') {
                         t->y = t->old_y;
                     }
