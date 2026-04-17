@@ -85,6 +85,9 @@ static GameState *init(GameMemory* gameMemory) {
 
     state->editor_state = (EditorState) {.active_tool = TOOL_PLACE_WALL};
 
+    state->mouse_state.left_button_down = 0;
+    state->mouse_state.left_button_click = 0;
+
 
     state->image_list = arena_alloc(&state->permanent_arena, sizeof(Image) * 5);
     Image image = gameMemory->platform_api.load_image("tileset.bmp");
