@@ -240,6 +240,7 @@ int main(void) {
     }
 
     free(game_memory.permanent_storage);
+    free(game_memory.transient_storage);
 
     return 0;
 }

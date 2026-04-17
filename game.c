@@ -78,6 +78,8 @@ static GameState *init(GameMemory* gameMemory) {
     state->keyboard_state.keys_down[KEY_RIGHT] = SCANCODE_D;
     state->keyboard_state.keys_down[KEY_SHIFT] = SCANCODE_LSHIFT;
 
+    state->mode = PLAY;
+
 
     state->image_list = arena_alloc(&state->permanent_arena, sizeof(Image) * 5);
     Image image = gameMemory->platform_api.load_image("test2.bmp");
@@ -295,7 +297,8 @@ static void update_for_editor(GameState* state, const u8* key_states) {
         }
 
         if(mouse->left_button_click) {
-
+            int index = ARRAY_INDEX((int)((state->viewportX+mouse->x)/state->tileSize), (int)((state->viewportY+mouse->y)/state->tileSize), state->levelWidth);
+            state->level[index] = '2';
         }
 }
 
@@ -344,6 +347,8 @@ static bool update_and_render(GameState* state, const u8* key_states) {
                 fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*100, 100, 100, 0x33333333);
             } else if (state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '.') {
                 fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*100, 100, 100, 0x77777777);
+            } else if (state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '2') {
+                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*100, 100, 100, 0xffaa3322);
             } 
             counter++;
         }
