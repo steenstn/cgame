@@ -8,7 +8,7 @@
 
 #include "game.h"
 
-#include "game_engine.h"
+#include "game_engine.c"
 
 enum Flags {
     IS_ACTIVE = 1<<0,
@@ -65,8 +65,8 @@ static GameState *init(GameMemory* gameMemory) {
 
     state->screenWidth = SCREEN_WIDTH;
     state->screenHeight = SCREEN_HEIGHT;
-    state->levelWidth = 60;
-    state->levelHeight = 30;
+    state->levelWidth = 100;
+    state->levelHeight = 100;
     state->tileSize = 100;
     state->level = arena_alloc(&state->permanent_arena, state->levelWidth*state->levelHeight);
 
@@ -272,7 +272,6 @@ static void update_for_game(GameState* state, const u8* key_states) {
             }
         }
 
-        state->things[2].y=200;
 }
 
 
@@ -298,7 +297,11 @@ static void update_for_editor(GameState* state, const u8* key_states) {
 
         if(mouse->left_button_click) {
             int index = ARRAY_INDEX((int)((state->viewportX+mouse->x)/state->tileSize), (int)((state->viewportY+mouse->y)/state->tileSize), state->levelWidth);
-            state->level[index] = '2';
+            if(state->level[index] == '1') {
+                state->level[index] = '.';
+            } else if (state->level[index] == '.') {
+                state->level[index] = '1';
+            }
         }
 }
 
@@ -338,7 +341,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     int end_x = clamp(ARRAY_INDEX(state->viewportX/state->tileSize+SCREEN_WIDTH/state->tileSize, 0, state->levelWidth)+2, 0, state->levelWidth);
 
     int start_y = ARRAY_INDEX(0, state->viewportY/(state->levelWidth*state->tileSize), state->levelWidth);
-    int end_y = clamp(ARRAY_INDEX(0, state->viewportY/state->tileSize+SCREEN_HEIGHT, state->levelWidth),0, INT_MAX );
+    int end_y = clamp((state->viewportY+SCREEN_HEIGHT) / state->tileSize+1, 0, state->levelHeight);
     //printf("pos: %d\n", start_y);
     //int start_y = clamp(state->viewportY, 0, INT_MAX);
     for(int y = start_y; y < end_y; y++) {
