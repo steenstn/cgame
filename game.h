@@ -52,6 +52,10 @@ typedef struct KeyboardState {
     uint8_t* keys_hit;
 } KeyboardState;
 
+typedef enum Mode {
+    PLAY,
+    EDITOR
+} Mode;
  
 
 typedef enum {
@@ -93,6 +97,8 @@ typedef struct GameState {
 
     KeyboardState keyboard_state;
     MouseState mouse_state;
+    Mode mode;
+
     RenderCommands render_command_buffer;
 } GameState;
 

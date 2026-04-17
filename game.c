@@ -174,25 +174,7 @@ static void fill_rect(GameState* state, int _x, int _y, int width, int height, u
         render_command_push_fill_rect(&state->render_command_buffer, _x, _y, width, height, color);
 }
 
-
-static bool update_and_render(GameState* state, const u8* key_states) {
-    state->render_command_buffer.count = 0;
-        /*for(int i = 0; i < _NUM_KEY_CODES; i++) {
-            printf("lol: %d", key_states[i]);
-            state->keys_down[i] = key_states[state->keys_down[i]];
-            printf("state->keys_down[%d]: %d\n",i, state->keys_down[i]);
-        }
-        */
-
-    
-        /*for(int i = 0; i < 512; i++) {
-            if (key_states[i]) {
-
-            printf("Also: %d\n", (int)'a');
-            printf("%d: %d\n", i, key_states[i]);
-            }
-        }*/
-
+static void update_for_game(GameState* state, const u8* key_states) {
 
         float speed = 5.0;
 
@@ -205,7 +187,11 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             speed = 8;
         }
         if (state->keyboard_state.keys_hit[SDLK_TAB]) {
-            printf("lol\n");
+            if(state->mode == PLAY) {
+                state->mode = EDITOR;
+            } else if(state->mode == EDITOR) {
+                state->mode = PLAY;
+            }
         }
 
         if(mouse->left_button_click) {
@@ -285,6 +271,61 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         }
 
         state->things[2].y=200;
+}
+
+
+static void update_for_editor(GameState* state, const u8* key_states) {
+        MouseState* mouse = &state->mouse_state;
+        int speed = 9;
+        if (key_states[SCANCODE_A]) {
+            state->viewportX-=speed;
+        }
+        if (key_states[SCANCODE_S]) {
+            state->viewportY+=speed;
+        }
+        if (key_states[SCANCODE_D]) {
+            state->viewportX+=speed;
+        }
+        if (key_states[SCANCODE_W]) {
+            state->viewportY-=speed;
+        }
+
+        if (state->keyboard_state.keys_hit[SDLK_TAB]) {
+            state->mode = PLAY;
+        }
+
+        if(mouse->left_button_click) {
+
+        }
+}
+
+static bool update_and_render(GameState* state, const u8* key_states) {
+    switch (state->mode) {
+        case PLAY:
+            update_for_game(state, key_states);
+        break;
+        case EDITOR:
+            update_for_editor(state, key_states);
+        break;
+    }
+    state->render_command_buffer.count = 0;
+        /*for(int i = 0; i < _NUM_KEY_CODES; i++) {
+            printf("lol: %d", key_states[i]);
+            state->keys_down[i] = key_states[state->keys_down[i]];
+            printf("state->keys_down[%d]: %d\n",i, state->keys_down[i]);
+        }
+        */
+
+    
+        /*for(int i = 0; i < 512; i++) {
+            if (key_states[i]) {
+
+            printf("Also: %d\n", (int)'a');
+            printf("%d: %d\n", i, key_states[i]);
+            }
+        }*/
+
+
     //---------- Render 
     render_command_push_clear(&state->render_command_buffer);
 
@@ -329,6 +370,10 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     fill_rect(state, 101, 21, ((float)state->frame_arena.used/(float)state->frame_arena.size)*600, 8, 0xafafafaf);
     draw_rect(state, 100, 30, 1000, 10, 0xffffffff);
     fill_rect(state, 101, 31, ((float)state->render_command_buffer.count/(float)state->render_command_buffer.capacity)*600, 8, 0xafafafaf);
+
+    if (state->mode == EDITOR) {
+        fill_rect(state, 20, 20, 20, 20, 0xff73af13);
+    }
 
     render_command_push_draw_image(&state->render_command_buffer, state->image_list[0], 450, 400);
     return true;
