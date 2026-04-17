@@ -67,7 +67,7 @@ static GameState *init(GameMemory* gameMemory) {
     state->screenHeight = SCREEN_HEIGHT;
     state->levelWidth = 100;
     state->levelHeight = 100;
-    state->tileSize = 100;
+    state->tileSize = 64;
     state->level = arena_alloc(&state->permanent_arena, state->levelWidth*state->levelHeight);
 
     state->keyboard_state.keys_down = arena_alloc(&state->permanent_arena, _NUM_KEY_CODES);
@@ -179,6 +179,7 @@ static void fill_rect(GameState* state, int _x, int _y, int width, int height, u
 static void update_for_game(GameState* state, const u8* key_states) {
 
         float speed = 5.0;
+        int tile_size = state->tileSize;
 
         MouseState* mouse = &state->mouse_state;
 
@@ -241,23 +242,23 @@ static void update_for_game(GameState* state, const u8* key_states) {
 
                 //TODO Funkar inte alltid, ibland fastnar man
                 if (t->vx >0) {
-                    int index = ARRAY_INDEX((int)((t->x+1)/100), (int)(t->y/100), state->levelWidth);
+                    int index = ARRAY_INDEX((int)((t->x+1)/tile_size), (int)(t->y/tile_size), state->levelWidth);
                     if (state->level[index] == '1') {
                         t->x = t->old_x;
                     }
                 } else if (t->vx < 0) {
-                    int index = ARRAY_INDEX((int)((t->x-1)/100), (int)(t->y/100), state->levelWidth);
+                    int index = ARRAY_INDEX((int)((t->x-1)/tile_size), (int)(t->y/tile_size), state->levelWidth);
                     if (state->level[index] == '1') {
                         t->x = t->old_x;
                     }
                 }
                 if (t->vy >0) {
-                    int index = ARRAY_INDEX((int)((t->x)/100), (int)((t->y+1)/100), state->levelWidth);
+                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y+1)/tile_size), state->levelWidth);
                     if (state->level[index] == '1') {
                         t->y = t->old_y;
                     }
                 } else if (t->vy < 0) {
-                    int index = ARRAY_INDEX((int)((t->x)/100), (int)((t->y-1)/100), state->levelWidth);
+                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y-1)/tile_size), state->levelWidth);
                     if (state->level[index] == '1') {
                         t->y = t->old_y;
                     }
@@ -342,16 +343,17 @@ static bool update_and_render(GameState* state, const u8* key_states) {
 
     int start_y = ARRAY_INDEX(0, state->viewportY/(state->levelWidth*state->tileSize), state->levelWidth);
     int end_y = clamp((state->viewportY+SCREEN_HEIGHT) / state->tileSize+1, 0, state->levelHeight);
-    //printf("pos: %d\n", start_y);
-    //int start_y = clamp(state->viewportY, 0, INT_MAX);
+
+    int tile_size = state->tileSize;
+
     for(int y = start_y; y < end_y; y++) {
         for(int x = start_x; x < end_x; x++) {
             if(state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '1') {
-                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*100, 100, 100, 0x33333333);
+                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x33333333);
             } else if (state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '.') {
-                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*100, 100, 100, 0x77777777);
+                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x77777777);
             } else if (state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '2') {
-                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*100, 100, 100, 0xffaa3322);
+                fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0xffaa3322);
             } 
             counter++;
         }
