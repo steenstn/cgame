@@ -2,3 +2,18 @@
 CompileFlags:
   Add: [-std=c99, -Wall, -I.]
   Compiler: gcc
+---
+If:
+  PathMatch: arena\.c
+CompileFlags:
+  Add: []
+---
+If:
+  PathMatch: game_engine\.c
+CompileFlags:
+  Add: [-include, SDL2/SDL_keycode.h, -include, SDL2/SDL_scancode.h, -include, game.h, -include, arena.c]
+---
+If:
+  PathMatch: editor\.c
+CompileFlags:
+  Add: [-include, SDL2/SDL_keycode.h, -include, SDL2/SDL_scancode.h, -include, game.h, -include, arena.c, -include, game_engine.c]

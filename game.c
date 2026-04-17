@@ -114,72 +114,9 @@ static GameState *init(GameMemory* gameMemory) {
     return state;
 }
 
-static void render_command_push_draw_rect(RenderCommands* buffer, int x, int y, int w, int h, u32 color) {
-        RenderCommand* cmd = &buffer->buffer[buffer->count++];
-        cmd->type = RC_DRAW_RECT;
-        cmd->data.fill_rect.x = x;
-        cmd->data.fill_rect.y = y;
-        cmd->data.fill_rect.w = w;
-        cmd->data.fill_rect.h = h;
-        cmd->data.fill_rect.color = color;
-}
-
-static void render_command_push_draw_image(RenderCommands* buffer, Image image, int x, int y) {
-    RenderCommand* cmd = &buffer->buffer[buffer->count++];
-    cmd->type = RC_DRAW_IMAGE;
-    cmd->data.draw_image.x = x;
-    cmd->data.draw_image.y = y;
-    cmd->data.draw_image.width = image.width;
-    cmd->data.draw_image.height = image.height;
-    cmd->data.draw_image.image = image.image;
-}
-
-static void render_command_push_draw_partial_image(RenderCommands* buffer, Image image, int image_x, int image_y, int partial_width, int partial_height, int x, int y) {
-    RenderCommand* cmd = &buffer->buffer[buffer->count++];
-    cmd->type = RC_DRAW_CROPPED_IMAGE;
-    cmd->data.draw_image.x = x;
-    cmd->data.draw_image.y = y;
-    cmd->data.draw_image.image_x = image_x;
-    cmd->data.draw_image.image_y = image_y;
-    cmd->data.draw_image.crop_width = partial_width;
-    cmd->data.draw_image.crop_height = partial_height;
-    cmd->data.draw_image.width = image.width;
-    cmd->data.draw_image.height = image.height;
-    cmd->data.draw_image.image = image.image;
-}
-
-static void draw_rect(GameState* state, int _x, int _y, int width, int height, u32 color) {
-        render_command_push_draw_rect(&state->render_command_buffer, _x, _y, width, height, color);
-}
-
-static void draw_cropped_image(GameState* state, u8 image_index, int image_x, int image_y, int from_width, int from_height, int _x, int _y, int image_width, int image_height) {
-        render_command_push_draw_partial_image(&state->render_command_buffer, state->image_list[image_index], image_x, image_y, from_width, from_height, _x, _y);
-}
-
 static void draw_image(GameState* state, u8* image, int _x, int _y, int image_width, int image_height) {
 }
 
-
-static void render_command_push_fill_rect(RenderCommands* buffer, int x, int y, int w, int h, u32 color) {
-        RenderCommand* cmd = &buffer->buffer[buffer->count++];
-        cmd->type = RC_FILL_RECT;
-        cmd->data.fill_rect.x = x;
-        cmd->data.fill_rect.y = y;
-        cmd->data.fill_rect.w = w;
-        cmd->data.fill_rect.h = h;
-        cmd->data.fill_rect.color = color;
-}
-
-static void render_command_push_clear(RenderCommands* buffer) {
-        RenderCommand* cmd = &buffer->buffer[buffer->count++];
-        cmd->type = RC_CLEAR;
-}
-
-
-static void fill_rect(GameState* state, int _x, int _y, int width, int height, u32 color) {
-        //state->render_command_buffer.buffer[state->render_command_buffer.length++] = *(RenderCommand*)arena_alloc(&state->frame_arena, sizeof(RenderCommand));
-        render_command_push_fill_rect(&state->render_command_buffer, _x, _y, width, height, color);
-}
 
 static void update_for_game(GameState* state, const u8* key_states) {
 
