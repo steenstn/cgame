@@ -82,6 +82,8 @@ static GameState *init(GameMemory* gameMemory) {
 
     state->mode = PLAY;
 
+    state->editor_state = (EditorState) {.active_tool = TOOL_PLACE_WALL};
+
 
     state->image_list = arena_alloc(&state->permanent_arena, sizeof(Image) * 5);
     Image image = gameMemory->platform_api.load_image("tileset.bmp");
@@ -298,12 +300,14 @@ static void update_for_editor(GameState* state, const u8* key_states) {
             state->mode = PLAY;
         }
 
-        if(mouse->left_button_click) {
+        if(mouse->left_button_down) {
             int index = ARRAY_INDEX((int)((state->viewportX+mouse->x)/state->tileSize), (int)((state->viewportY+mouse->y)/state->tileSize), state->levelWidth);
-            if(state->level[index] == '1') {
-                state->level[index] = '.';
-            } else if (state->level[index] == '.') {
-                state->level[index] = '1';
+            switch(state->editor_state.active_tool) {
+                case TOOL_PLACE_WALL:
+                    state->level[index] = '1';
+                break;
+                case TOOL_ERASE_WALL:
+                    state->level[index] = '.';
             }
         }
 }

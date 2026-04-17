@@ -80,6 +80,15 @@ typedef struct RenderCommands {
     RenderCommand* buffer;
 } RenderCommands;
 
+typedef enum ActiveTool {
+    TOOL_PLACE_WALL,
+    TOOL_ERASE_WALL,
+} ActiveTool;
+
+typedef struct EditorState {
+    ActiveTool active_tool;
+} EditorState;
+
 typedef struct GameState {
     Arena permanent_arena;
     Arena frame_arena;
@@ -98,6 +107,8 @@ typedef struct GameState {
     KeyboardState keyboard_state;
     MouseState mouse_state;
     Mode mode;
+
+    EditorState editor_state;
 
     RenderCommands render_command_buffer;
 } GameState;
