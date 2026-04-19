@@ -95,6 +95,7 @@ typedef struct GameState {
 
     Thing* things;
     uint8_t* level;
+    uint8_t* level_visibility;
     int levelWidth;
     int levelHeight;
     int tileSize;

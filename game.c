@@ -1,7 +1,9 @@
+//https://github.com/Pere001/2d-platformer-tutorial-2023
 #include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_scancode.h>
 #include <limits.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +12,7 @@
 
 #include "game_engine.c"
 #include "editor.c"
+#define PI 3.1415926535
 
 enum Flags {
     IS_ACTIVE = 1<<0,
@@ -72,6 +75,7 @@ static GameState *init(GameMemory* gameMemory) {
     state->levelHeight = 100;
     state->tileSize = 32;
     state->level = arena_alloc(&state->permanent_arena, state->levelWidth*state->levelHeight);
+    state->level_visibility = arena_alloc(&state->permanent_arena, state->levelWidth*state->levelHeight);
 
     state->keyboard_state.keys_down = arena_alloc(&state->permanent_arena, _NUM_KEY_CODES);
     state->keyboard_state.keys_hit = arena_alloc(&state->permanent_arena, SDL_NUM_SCANCODES);
@@ -94,10 +98,11 @@ static GameState *init(GameMemory* gameMemory) {
     state->image_list[0] = image;
 
     state->render_command_buffer.capacity = 1000;
-    state->render_command_buffer.buffer = arena_alloc(&state->frame_arena, sizeof(RenderCommand) * state->render_command_buffer.capacity);
+    state->render_command_buffer.buffer = arena_alloc(&state->permanent_arena, sizeof(RenderCommand) * state->render_command_buffer.capacity);
     state->render_command_buffer.count = 0;
 
     u8* level = state->level;
+    u8* level_visibility = state->level_visibility;
     int level_width = state->levelWidth;
     int level_height = state->levelHeight;
 
@@ -120,16 +125,15 @@ static GameState *init(GameMemory* gameMemory) {
 static void draw_image(GameState* state, u8* image, int _x, int _y, int image_width, int image_height) {
 }
 
-
 static void update_for_game(GameState* state, const u8* key_states) {
-
+        
         float speed = 5.0;
         int tile_size = state->tileSize;
 
         MouseState* mouse = &state->mouse_state;
 
-        state->viewportX = state->things[1].x+mouse->x*0.9-SCREEN_WIDTH;
-        state->viewportY = state->things[1].y+mouse->y*0.9-SCREEN_HEIGHT;
+        state->viewportX = state->things[1].x+mouse->x*0.9-SCREEN_WIDTH*0.9;
+        state->viewportY = state->things[1].y+mouse->y*0.9-SCREEN_HEIGHT*0.9;
 
         if (key_states[SCANCODE_LSHIFT]) {
             speed = 8;
@@ -222,7 +226,9 @@ static void update_for_game(GameState* state, const u8* key_states) {
 
 
 
+
 static bool update_and_render(GameState* state, const u8* key_states) {
+    arena_clear(&state->frame_arena);
     switch (state->mode) {
         case PLAY:
             update_for_game(state, key_states);
@@ -251,9 +257,34 @@ static bool update_and_render(GameState* state, const u8* key_states) {
 
     //---------- Render 
     render_command_push_clear(&state->render_command_buffer);
+    memset(state->level_visibility, 0, state->levelWidth*state->levelHeight);
+{
+        // Line of sight
 
-    int counter = 0;
+    float start_x = state->things[1].x;
+    float start_y = state->things[1].y;
+    for(float angle = 0; angle < 6.28; angle+=0.05) {
+        for(int steps = 0; steps < 10; steps++) {
+            float x_to_check = start_x + (state->tileSize*steps)*cos(angle);
+            float y_to_check = start_y + (state->tileSize*steps)*sin(angle);
+            u32 color = 0xffffffff;
 
+            int grid_x = (int)(x_to_check / state->tileSize);
+            int grid_y = (int)(y_to_check / state->tileSize);
+            int index = ARRAY_INDEX(grid_x, grid_y, state->levelWidth);
+             if (state->level[index] == '1') {
+                 state->level_visibility[index] = 1;
+                    break;
+            }
+                //draw_cropped_image(state, 0, 8*32, 7*32, 32, 32, (int)(-state->viewportX+x_to_check)/state->tileSize, (int)(-state->viewportY+y_to_check)/state->tileSize, 32, 32);
+                //fill_rect(state, (-state->viewportX+x_to_check), (-state->viewportY+y_to_check), 5, 5, color);
+                state->level_visibility[index] = 1;
+
+            //}
+        }
+    }
+    }
+    
     int start_x = clamp(ARRAY_INDEX(state->viewportX/state->tileSize, 0, state->levelWidth), 0, INT_MAX);
     int end_x = clamp(ARRAY_INDEX(state->viewportX/state->tileSize+SCREEN_WIDTH/state->tileSize, 0, state->levelWidth)+2, 0, state->levelWidth);
 
@@ -264,21 +295,24 @@ static bool update_and_render(GameState* state, const u8* key_states) {
 
     for(int y = start_y; y < end_y; y++) {
         for(int x = start_x; x < end_x; x++) {
-            int drawing_x = -state->viewportX+x*state->tileSize;
+            int drawing_x = -state->viewportX+x*tile_size;
             int drawing_y = -state->viewportY+y*tile_size;
-            if(state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '1') {
+            int index = ARRAY_INDEX(x, y, state->levelWidth);
+            if (state->level_visibility[index] == 1) {
+
+            if(state->level[index] == '1') {
                 draw_cropped_image(state, 0, (x%3)*32, 0, 32, 32, drawing_x, drawing_y, 32, 32);
                 //fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x33333333);
             } else if (state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '.') {
                 draw_cropped_image(state, 0, 8*32, 7*32, 32, 32, drawing_x, drawing_y, 32, 32);
                 //fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x77777777);
             }
-            counter++;
+            }
         }
+    
+}
 
-    }
     //printf("Counter: %d\n", counter);
-        draw_rect(state, state->mouse_state.x, state->mouse_state.y, 50, 50, 0xff0000ff);
 
     for(int i = 1; i < MAX_THINGS; i++) {
         Thing* t = &state->things[i];
@@ -302,6 +336,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     if (state->mode == EDITOR) {
         fill_rect(state, 20, 20, 20, 20, 0xff73af13);
     }
+
 
     //render_command_push_draw_image(&state->render_command_buffer, state->image_list[0], 450, 400);
     return true;
