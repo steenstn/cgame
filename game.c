@@ -56,8 +56,9 @@ static GameState *init(GameMemory* gameMemory) {
         state->things[i].width = 0;
         state->things[i].height = 0;
     }
-    for(int i = 1; i < 3; i++) {
+    for(int i = 1; i < 10; i++) {
         state->things[i].x = i*400;
+        state->things[i].y = i*400;
         state->things[i].width = 20;
         state->things[i].height = 20;
         state->things[i].flags = IS_ACTIVE | FLAG_CAN_MOVE;
@@ -127,7 +128,7 @@ static void draw_image(GameState* state, u8* image, int _x, int _y, int image_wi
 
 static void update_for_game(GameState* state, const u8* key_states) {
         
-        float speed = 5.0;
+        float speed = 3.0;
         int tile_size = state->tileSize;
 
         MouseState* mouse = &state->mouse_state;
@@ -225,8 +226,6 @@ static void update_for_game(GameState* state, const u8* key_states) {
 }
 
 
-
-
 static bool update_and_render(GameState* state, const u8* key_states) {
     arena_clear(&state->frame_arena);
     switch (state->mode) {
@@ -257,7 +256,16 @@ static bool update_and_render(GameState* state, const u8* key_states) {
 
     //---------- Render 
     render_command_push_clear(&state->render_command_buffer);
-    memset(state->level_visibility, 0, state->levelWidth*state->levelHeight);
+    //memset(state->level_visibility, 0, state->levelWidth*state->levelHeight);
+    for(int i = 0; i < state->levelWidth*state->levelHeight;i++) {
+        if ( state->level_visibility[i]>0) {
+            state->level_visibility[i]--; 
+        }
+
+
+    }
+
+
 {
         // Line of sight
 
@@ -286,12 +294,12 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             int grid_y = (int)(y_to_check / state->tileSize);
             int index = ARRAY_INDEX(grid_x, grid_y, state->levelWidth);
              if (state->level[index] == '1') {
-                 state->level_visibility[index] = 1;
+                 state->level_visibility[index] = 10;
                     break;
             }
                 //draw_cropped_image(state, 0, 8*32, 7*32, 32, 32, (int)(-state->viewportX+x_to_check)/state->tileSize, (int)(-state->viewportY+y_to_check)/state->tileSize, 32, 32);
                 //fill_rect(state, (-state->viewportX+x_to_check), (-state->viewportY+y_to_check), 5, 5, color);
-                state->level_visibility[index] = 1;
+                state->level_visibility[index] = 10;
 
             //}
         }
@@ -311,7 +319,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             int drawing_x = -state->viewportX+x*tile_size;
             int drawing_y = -state->viewportY+y*tile_size;
             int index = ARRAY_INDEX(x, y, state->levelWidth);
-            if (state->level_visibility[index] == 1) {
+            if (state->level_visibility[index] > 0) {
 
             if(state->level[index] == '1') {
                 draw_cropped_image(state, 0, (x%3)*32, 0, 32, 32, drawing_x, drawing_y, 32, 32);
