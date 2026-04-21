@@ -1,3 +1,5 @@
+#include "game.h"
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -23,7 +25,22 @@ typedef uint8_t u8;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
+typedef struct vec2 {
+    float x,y;
+} vec2;
 
+static float vec_dot(vec2 v1, vec2 v2) {
+    return v1.x*v2.x + v1.y*v2.y;
+}
+
+static float vec_length(vec2 v) {
+    return sqrt(v.x*v.x + v.y*v.y);
+}
+
+static vec2 vec_normalize(vec2 v) {
+    float length = vec_length(v);
+    return (vec2){v.x/length, v.y/length};
+}
 static inline bool flags_is_set(u64 flags, u64 flag_to_check) {
     return (flags & flag_to_check) == flag_to_check;
 }
@@ -101,6 +118,16 @@ static void render_command_push_fill_rect(RenderCommands* buffer, int x, int y, 
         cmd->data.fill_rect.y = y;
         cmd->data.fill_rect.w = w;
         cmd->data.fill_rect.h = h;
+        cmd->data.fill_rect.color = color;
+}
+
+static void render_command_push_draw_line(RenderCommands* buffer, int x1, int y1, int x2, int y2, u32 color) {
+        RenderCommand* cmd = &buffer->buffer[buffer->count++];
+        cmd->type = RC_DRAW_LINE;
+        cmd->data.draw_line.x1 = x1;
+        cmd->data.draw_line.y1 = y1;
+        cmd->data.draw_line.x2 = x2;
+        cmd->data.draw_line.y2 = y2;
         cmd->data.fill_rect.color = color;
 }
 

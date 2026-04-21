@@ -223,6 +223,11 @@ int main(void) {
                     SDL_RenderCopy(renderer, command.data.draw_image.image, &from_rect, &image_rect);
                 }
                 break;
+                case RC_DRAW_LINE: {
+                    SDL_SetRenderDrawColor(renderer, 255,255,255,255);
+                    SDL_RenderDrawLine(renderer, command.data.draw_line.x1, command.data.draw_line.y1, command.data.draw_line.x2, command.data.draw_line.y2);
+                }
+                break;
                 }
         }
         // Clear the screen first

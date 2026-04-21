@@ -64,12 +64,14 @@ typedef enum {
     RC_DRAW_RECT,
     RC_DRAW_IMAGE,
     RC_DRAW_CROPPED_IMAGE,
+    RC_DRAW_LINE,
 } RenderCommandType;
 
 typedef struct {
     RenderCommandType type;
     union {
         struct {int x, y, w, h; uint32_t color;} fill_rect;
+        struct {int x1, y1, x2, y2; uint32_t color;} draw_line;
         struct {void* image; int index, x, y, width, height, image_x, image_y, crop_width, crop_height;} draw_image;
     } data;
 } RenderCommand;
