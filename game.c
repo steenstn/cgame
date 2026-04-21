@@ -270,12 +270,13 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     render_command_push_draw_line(&state->render_command_buffer, drawing_start_x, drawing_start_y, drawing_start_x+100*looking_vector.x, drawing_start_y+100*looking_vector.y, 0);
     //printf("%f  %f\n", looking_vector.x, looking_vector.y);
     
-    float s = 0;
     for(float angle = 0; angle < 6.28; angle+=0.02) {
         vec2 light_vector = vec_normalize((vec2){100*cos(angle), 100*sin(angle)});
         //render_command_push_draw_line(&state->render_command_buffer, drawing_start_x, drawing_start_y, light_vector.x, light_vector.y, 0);
 
-        float max_steps = 20*(vec_dot(looking_vector, light_vector));
+        float dot = vec_dot(looking_vector, light_vector);
+
+        float max_steps = dot > 0 ? 20*dot*dot: 5*fabs(dot);
         //printf("%f\n", max_steps);
         for(int steps = 0; steps < max_steps; steps++) {
             float x_to_check = start_x + (state->tileSize*steps)*cos(angle);
