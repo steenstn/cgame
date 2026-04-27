@@ -5,6 +5,17 @@
 
 #define ARRAY_INDEX(x, y, width) (x + width*y)
 
+
+#define SCANCODE_1 30
+#define SCANCODE_2 31
+#define SCANCODE_3 32
+#define SCANCODE_4 33
+#define SCANCODE_5 34
+#define SCANCODE_6 35
+#define SCANCODE_7 36
+#define SCANCODE_8 37
+#define SCANCODE_9 38
+#define SCANCODE_0 39
 #define SCANCODE_A 4
 #define SCANCODE_D 7
 #define SCANCODE_S 22

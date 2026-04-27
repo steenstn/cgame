@@ -6,3 +6,4 @@ static u8 level_get_tile(Level* level, int x, int y) {
     }
     return level->tiles[index];
 }
+

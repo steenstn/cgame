@@ -1,3 +1,5 @@
+#include "game.h"
+#include <SDL2/SDL_keycode.h>
 static void update_for_editor(GameState* state, const u8* key_states) {
         MouseState* mouse = &state->mouse_state;
         int speed = 9;
@@ -13,14 +15,16 @@ static void update_for_editor(GameState* state, const u8* key_states) {
         if (key_states[SCANCODE_W]) {
             state->viewportY-=speed;
         }
+        // TODO add flip
+        if (state->keyboard_state.keys_hit[SCANCODE_1]) {
+            printf("aa\n");
+            state->editor_state.active_tool = state->editor_state.active_tool == TOOL_PLACE_WALL ? TOOL_ERASE_WALL : TOOL_PLACE_WALL;
+        }
 
-        if (state->keyboard_state.keys_hit[SDLK_TAB]) {
-                printf("wwwww\n");
+        if (state->keyboard_state.keys_hit[SCANCODE_TAB] == 1) {
                 bool res = state->platform_api.write_file("level.bin", state->level.tiles, state->level.level_width*state->level.level_height);
-                if (res) {
-                    printf("yay!\n");
-                } else {
-                    printf("nay\n");
+                if (!res) {
+                    printf("Failed to save level\n");
                 }
             state->mode = PLAY;
         }

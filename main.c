@@ -49,7 +49,6 @@ bool platform_read_whole_file(char* path, void* result, size_t length) {
 }
 
 bool platform_write_file(char* path, void* data, size_t length) {
-    printf("writingf\n");
     FILE *fp = fopen(path, "wb+");
     if (fp == NULL) {
         printf("Failed to write %s\n", path);    
@@ -158,14 +157,7 @@ int main(void) {
         while(SDL_PollEvent(&e)) {
             if(e.type == SDL_QUIT) quit = true;
             if (e.type == SDL_KEYDOWN) {
-                switch (e.key.keysym.sym) {
-                    case SDLK_ESCAPE:
-                        quit = true;
-                    break;
-                    case SDLK_TAB:
-                        game_state->keyboard_state.keys_hit[SDLK_TAB]++;
-                    break;
-                }
+                game_state->keyboard_state.keys_hit[e.key.keysym.scancode]++;
             }
             if (e.type == SDL_MOUSEMOTION) {
                 game_state->mouse_state.x = e.motion.x;

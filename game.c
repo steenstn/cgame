@@ -152,12 +152,8 @@ static void update_for_game(GameState* state, const u8* key_states) {
         if (key_states[SCANCODE_LSHIFT]) {
             speed = 1;
         }
-        if (state->keyboard_state.keys_hit[SDLK_TAB]) {
-            if(state->mode == PLAY) {
-                state->mode = EDITOR;
-            } else if(state->mode == EDITOR) {
-                state->mode = PLAY;
-            }
+        if (state->keyboard_state.keys_hit[SCANCODE_TAB]) {
+            state->mode = EDITOR;
         }
 
         if(mouse->left_button_click) {
@@ -260,6 +256,16 @@ static void update_for_game(GameState* state, const u8* key_states) {
 }
 
 
+static void print_scancodes(const u8* key_states) {
+    for(int i = 0; i < 512; i++) {
+        if (key_states[i]) {
+
+        printf("Also: %d\n", (int)'a');
+        printf("%d: %d\n", i, key_states[i]);
+        }
+    }
+}
+
 static bool update_and_render(GameState* state, const u8* key_states) {
     arena_clear(&state->frame_arena);
     switch (state->mode) {
@@ -279,14 +285,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         */
 
     
-        /*for(int i = 0; i < 512; i++) {
-            if (key_states[i]) {
-
-            printf("Also: %d\n", (int)'a');
-            printf("%d: %d\n", i, key_states[i]);
-            }
-        }*/
-
+        //print_scancodes(key_states);
 
     //---------- Render 
     render_command_push_clear(&state->render_command_buffer);
