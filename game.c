@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <execinfo.h>
 
 #include "game.h"
 
@@ -60,7 +61,7 @@ static GameState *init(GameMemory* gameMemory) {
         state->things[i].width = 0;
         state->things[i].height = 0;
     }
-    for(int i = 1; i < 10; i++) {
+    for(int i = 1; i < 5; i++) {
         state->things[i].x = i*400;
         state->things[i].y = i*400;
         state->things[i].width = 20;
@@ -71,6 +72,8 @@ static GameState *init(GameMemory* gameMemory) {
     state->things[1].x = 400;
     state->things[1].y = 400;
 
+
+    state->platform_api = gameMemory->platform_api;
 
     state->screenWidth = SCREEN_WIDTH;
     state->screenHeight = SCREEN_HEIGHT;
@@ -109,17 +112,25 @@ static GameState *init(GameMemory* gameMemory) {
     u8* level = state->level.tiles;
     //u8* level_visibility = state->level_visibility;
 
-    for(int i = 0; i < level_width*level_height; i++) {
-        level[i] = '.';
-        if (i%level_width == 0 || i <= level_width || i > (level_width*level_height)-level_width || ((i+1)%(level_width))==0 || i%83==0) {
-            level[i] = '1';
-        }
-        if (i > 0 && level[(i-1)] == '1') {
-            if( rand() % 10 > 3) {
+
+    bool level_exists = gameMemory->platform_api.read_whole_file("level.bin", level, state->level.level_height*state->level.level_width);
+
+    if (!level_exists) {
+        printf("Creating default level\n");
+
+        for(int i = 0; i < level_width*level_height; i++) {
+            level[i] = '.';
+            if (i%level_width == 0 || i <= level_width || i > (level_width*level_height)-level_width || ((i+1)%(level_width))==0 || i%83==0) {
                 level[i] = '1';
             }
+            if (i > 0 && level[(i-1)] == '1') {
+                if( rand() % 10 > 3) {
+                    level[i] = '1';
+                }
 
+            }
         }
+
     }
 
     return state;
@@ -130,8 +141,8 @@ static GameState *init(GameMemory* gameMemory) {
 
 static void update_for_game(GameState* state, const u8* key_states) {
         
-        float speed = 0.5;
-        int tile_size = state->level.tile_size;
+        float speed = 0.2;
+        float max_speed = 6;
 
         MouseState* mouse = &state->mouse_state;
 
@@ -139,7 +150,7 @@ static void update_for_game(GameState* state, const u8* key_states) {
         state->viewportY = state->things[1].y-SCREEN_HEIGHT*0.5;
 
         if (key_states[SCANCODE_LSHIFT]) {
-            speed = 8;
+            speed = 1;
         }
         if (state->keyboard_state.keys_hit[SDLK_TAB]) {
             if(state->mode == PLAY) {
@@ -174,24 +185,29 @@ static void update_for_game(GameState* state, const u8* key_states) {
 
             t->vx+= t->ax;
             t->vy+= t->ay;
-            t->vx = clampf(t->vx, -5, 5);
-            t->vy = clampf(t->vy, -5, 5);
+            t->vx = clampf(t->vx, -max_speed, max_speed);
+            t->vy = clampf(t->vy, -max_speed, max_speed);
             t->x+= t->vx;
             t->y+= t->vy;
 
             if(flags_is_set(t->flags, FLAG_PLAYER_CONTROLLED)) {
+                t->moving = false;
                     t->ax = 0;
                     t->ay = 0;
                 if (key_states[SCANCODE_A]) {
+                    t->moving = true;
                     t->ax=-speed;
                 }
                 if (key_states[SCANCODE_S]) {
+                    t->moving = true;
                     t->ay=speed;
                 }
                 if (key_states[SCANCODE_D]) {
+                    t->moving = true;
                     t->ax=speed;
                 }
                 if (key_states[SCANCODE_W]) {
+                    t->moving = true;
                     // TODO proper jump
                     t->ay=20*-speed;
                 }
@@ -199,8 +215,8 @@ static void update_for_game(GameState* state, const u8* key_states) {
 
             if (flags_is_set(t->flags, FLAG_AFFECTED_BY_GRAVITY)) {
                 t->vy+=1.5;
-                if (t->vy > 5) {
-                    t->vy = 5;
+                if (t->vy > max_speed) {
+                    t->vy = max_speed;
                 }
                 
             }
@@ -208,31 +224,26 @@ static void update_for_game(GameState* state, const u8* key_states) {
             if (flags_is_set(t->flags, FLAG_CAN_MOVE)) {
                 t->x += t->vx;
                 t->y += t->vy;
-                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y+t->height)/tile_size), state->level.level_width);
-                if (level_get_tile(&state->level, t->x, t->y+t->height)== '1') {
+                if (!t->moving && level_get_tile(&state->level, t->x, t->y+t->height) == '1') {
                     t->vx/=1.1;
                 }
 
                 //TODO Funkar inte alltid, ibland fastnar man
                 if (t->vx >0) {
-                    int index = ARRAY_INDEX((int)((t->x+t->width)/tile_size), (int)((t->y)/tile_size), state->level.level_width);
-                    if (state->level.tiles[index] == '1') {
+                    if (level_get_tile(&state->level, t->x + t->width, t->y) == '1') {
                         t->x = t->old_x;
                     }
                 } else if (t->vx < 0) {
-                    int index = ARRAY_INDEX((int)((t->x-1)/tile_size), (int)(t->y/tile_size), state->level.level_width);
-                    if (state->level.tiles[index] == '1') {
+                    if (level_get_tile(&state->level, t->x - 1, t->y) == '1') {
                         t->x = t->old_x;
                     }
                 }
                 if (t->vy >0) {
-                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y+t->height)/tile_size), state->level.level_width);
-                    if (state->level.tiles[index] == '1') {
+                    if (level_get_tile(&state->level, t->x, t->y+t->height)== '1') {
                         t->y = t->old_y;
                     }
                 } else if (t->vy < 0) {
-                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y-1)/tile_size), state->level.level_width);
-                    if (state->level.tiles[index] == '1') {
+                    if (level_get_tile(&state->level, t->x, t->y)== '1') {
                         t->y = t->old_y;
                     }
                 }

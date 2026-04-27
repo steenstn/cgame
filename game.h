@@ -2,6 +2,7 @@
 #define GAME_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "arena.c"
@@ -17,9 +18,12 @@ typedef struct Image {
 
 typedef struct PlatformAPI {
     char* (*get_stuff)();
-    void* (*read_whole_file)(char* path);
+    bool (*read_whole_file)(char* path, void* result, size_t length);
+    bool (*write_file)(char* path, void* data, size_t length);
     Image (*load_image)(char* path);
 } PlatformAPI;
+
+bool platform_read_whole_file(char* path, void* result, size_t length);
 
 typedef struct GameMemory {
     bool is_initialized;
@@ -38,6 +42,7 @@ typedef struct Thing {
     int width, height;
     int projectile_counter;
     bool jumping;
+    bool moving;
 } Thing;
 
 typedef struct vec2 {
@@ -135,6 +140,8 @@ typedef struct GameState {
 
     EditorState editor_state;
 
+    PlatformAPI platform_api;
+
     RenderCommands render_command_buffer;
 } GameState;
 
@@ -147,6 +154,5 @@ typedef struct GameAPI {
 GameAPI* get_game_api();
 
 
-void* platform_read_whole_file(char* path);
 
 #endif 

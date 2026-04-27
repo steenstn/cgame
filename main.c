@@ -13,6 +13,7 @@
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_image.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,16 +35,30 @@ int getArrayIndex(int x, int y, int levelWidth, int tileWidth) {
     return xPos + yPos;
 }
 
-void* platform_read_whole_file(char* path) {
+// TODO Make this not bad
+bool platform_read_whole_file(char* path, void* result, size_t length) {
     FILE *fp = fopen(path, "rb");
     if (fp == NULL) {
         printf("Failed to load %s\n", path);
-        exit(1);
+        return false;
     }
-    void* file = malloc(1024*1024);
-    fread(file, 1024*1024, 1, fp);
+    fread(result, length, 1, fp);
     fclose(fp);
-    return file;
+    return true;
+
+}
+
+bool platform_write_file(char* path, void* data, size_t length) {
+    printf("writingf\n");
+    FILE *fp = fopen(path, "wb+");
+    if (fp == NULL) {
+        printf("Failed to write %s\n", path);    
+        return false;
+    }
+    // TODO Is this the way to do it? Maybe chunk things up?
+    size_t result = fwrite(data, length, 1, fp);
+
+    return result == 1;
 }
 
 SDL_Renderer* renderer;
@@ -111,6 +126,7 @@ int main(void) {
     game_memory.transient_storage = malloc(game_memory.transient_storage_size);
     game_memory.platform_api.get_stuff = woop;
     game_memory.platform_api.read_whole_file = platform_read_whole_file;
+    game_memory.platform_api.write_file = platform_write_file;
     game_memory.platform_api.load_image = platform_load_image;
 
     GameState* game_state = api->init(&game_memory);

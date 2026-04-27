@@ -15,6 +15,13 @@ static void update_for_editor(GameState* state, const u8* key_states) {
         }
 
         if (state->keyboard_state.keys_hit[SDLK_TAB]) {
+                printf("wwwww\n");
+                bool res = state->platform_api.write_file("level.bin", state->level.tiles, state->level.level_width*state->level.level_height);
+                if (res) {
+                    printf("yay!\n");
+                } else {
+                    printf("nay\n");
+                }
             state->mode = PLAY;
         }
 
