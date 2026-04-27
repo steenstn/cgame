@@ -28,16 +28,26 @@ typedef struct GameMemory {
     void* transient_storage;
     size_t transient_storage_size;
     PlatformAPI platform_api;
-
 } GameMemory;
 
 typedef struct Thing {
+    uint64_t flags;
     float x,y, old_x, old_y;
     float vx, vy;
+    float ax, ay;
     int width, height;
     int projectile_counter;
-    uint64_t flags;
+    bool jumping;
 } Thing;
+
+typedef struct vec2 {
+    float x,y;
+} vec2;
+
+typedef struct Triangle {
+    vec2 p[3];
+    vec2 normals[3];
+} Triangle;
 
 typedef struct MouseState {
     int x,y;
@@ -82,6 +92,12 @@ typedef struct RenderCommands {
     RenderCommand* buffer;
 } RenderCommands;
 
+
+
+
+
+
+
 typedef enum ActiveTool {
     TOOL_PLACE_WALL,
     TOOL_ERASE_WALL,
@@ -91,21 +107,27 @@ typedef struct EditorState {
     ActiveTool active_tool;
 } EditorState;
 
+
+typedef struct Level {
+    uint8_t* tiles;
+    uint8_t* level_visibility;
+    int tile_size;
+    int level_width;
+    int level_height;
+} Level;
+
 typedef struct GameState {
     Arena permanent_arena;
     Arena frame_arena;
 
     Thing* things;
-    uint8_t* level;
-    uint8_t* level_visibility;
-    int levelWidth;
-    int levelHeight;
-    int tileSize;
+    Level level;
     int screenWidth;
     int screenHeight;
     int viewportX;
     int viewportY;
     Image* image_list;
+    Triangle* triangles;
 
     KeyboardState keyboard_state;
     MouseState mouse_state;

@@ -25,16 +25,46 @@ typedef uint8_t u8;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
-typedef struct vec2 {
-    float x,y;
-} vec2;
+
+
+static vec2 vec_minus(vec2 a, vec2 b) {
+    return (vec2){a.x-b.x, a.y-b.y};
+}
+
+static vec2 vec_plus(vec2 a, vec2 b) {
+    return (vec2){a.x+b.x, a.y+b.y};
+}
 
 static float vec_dot(vec2 v1, vec2 v2) {
     return v1.x*v2.x + v1.y*v2.y;
 }
 
+static float vec_cross(vec2 a, vec2 b) {
+    return a.x*b.y - a.y*b.x;
+}
+
 static float vec_length(vec2 v) {
     return sqrt(v.x*v.x + v.y*v.y);
+}
+
+static float vec_length_sqr(vec2 v) {
+    return v.x*v.x + v.y*v.y;
+}
+
+static vec2 vec_from_length_angle(float length, float angle) {
+    return (vec2){cos(angle)*length, sin(angle)*length};
+}
+
+static vec2 vec_rotate_90_degrees(vec2 v) {
+    return (vec2){-v.x, v.y};
+}
+
+static vec2 vec_rotate_minus_90_degrees(vec2 v) {
+    return (vec2){v.y, -v.x};
+}
+
+static bool points_are_clockwise(vec2 p0, vec2 p1, vec2 p2) {
+    return (vec_cross(vec_minus(p1, p0), vec_minus(p2, p1)) < 0);
 }
 
 static vec2 vec_normalize(vec2 v) {
@@ -58,6 +88,9 @@ static inline u64 flags_flip(u64 flags, u64 flag_to_flip) {
 }
 
 static inline int clamp(int value, int min, int max) {
+    return (value < min ? min: (value > max ? max : value));
+}
+static inline float clampf(float value, float min, float max) {
     return (value < min ? min: (value > max ? max : value));
 }
 

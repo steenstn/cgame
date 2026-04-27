@@ -19,13 +19,13 @@ static void update_for_editor(GameState* state, const u8* key_states) {
         }
 
         if(mouse->left_button_down) {
-            int index = ARRAY_INDEX((int)((state->viewportX+mouse->x)/state->tileSize), (int)((state->viewportY+mouse->y)/state->tileSize), state->levelWidth);
+            int index = ARRAY_INDEX((int)((state->viewportX+mouse->x)/state->level.tile_size), (int)((state->viewportY+mouse->y)/state->level.tile_size), state->level.level_width);
             switch(state->editor_state.active_tool) {
                 case TOOL_PLACE_WALL:
-                    state->level[index] = '1';
+                    state->level.tiles[index] = '1';
                 break;
                 case TOOL_ERASE_WALL:
-                    state->level[index] = '.';
+                    state->level.tiles[index] = '.';
             }
         }
 }

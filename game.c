@@ -11,6 +11,7 @@
 #include "game.h"
 
 #include "game_engine.c"
+//#include "level.c"
 #include "editor.c"
 #define PI 3.1415926535
 
@@ -20,6 +21,7 @@ enum Flags {
     FLAG_CAN_MOVE = 1<<2,
     FLAG_PROJECTILE = 1<<3,
     FLAG_COLLIDES_WITH_WALL = 1<<4,
+    FLAG_AFFECTED_BY_GRAVITY = 1<<5,
 };
 
 
@@ -53,6 +55,8 @@ static GameState *init(GameMemory* gameMemory) {
         state->things[i].y = 0;
         state->things[i].vx = 0;
         state->things[i].vy = 0;
+        state->things[i].ax = 0;
+        state->things[i].ay = 0;
         state->things[i].width = 0;
         state->things[i].height = 0;
     }
@@ -61,9 +65,9 @@ static GameState *init(GameMemory* gameMemory) {
         state->things[i].y = i*400;
         state->things[i].width = 20;
         state->things[i].height = 20;
-        state->things[i].flags = IS_ACTIVE | FLAG_CAN_MOVE;
+        state->things[i].flags = IS_ACTIVE | FLAG_CAN_MOVE ;
     }
-    state->things[1].flags = FLAG_PLAYER_CONTROLLED | FLAG_CAN_MOVE | IS_ACTIVE;
+    state->things[1].flags = FLAG_PLAYER_CONTROLLED | FLAG_CAN_MOVE | IS_ACTIVE | FLAG_AFFECTED_BY_GRAVITY;
     state->things[1].x = 400;
     state->things[1].y = 400;
 
@@ -72,11 +76,11 @@ static GameState *init(GameMemory* gameMemory) {
     state->screenHeight = SCREEN_HEIGHT;
     state->viewportX = 0;
     state->viewportY = 0;
-    state->levelWidth = 100;
-    state->levelHeight = 100;
-    state->tileSize = 32;
-    state->level = arena_alloc(&state->permanent_arena, state->levelWidth*state->levelHeight);
-    state->level_visibility = arena_alloc(&state->permanent_arena, state->levelWidth*state->levelHeight);
+    int level_width = 100;
+    int level_height = 100;
+    int tile_size = 32;
+    state->level = (Level){.tiles = arena_alloc(&state->permanent_arena, level_width*level_height), NULL, .tile_size = tile_size, .level_width=level_width, .level_height = level_height};
+    //state->level_visibility = arena_alloc(&state->permanent_arena, state->levelWidth*state->levelHeight);
 
     state->keyboard_state.keys_down = arena_alloc(&state->permanent_arena, _NUM_KEY_CODES);
     state->keyboard_state.keys_hit = arena_alloc(&state->permanent_arena, SDL_NUM_SCANCODES);
@@ -102,10 +106,8 @@ static GameState *init(GameMemory* gameMemory) {
     state->render_command_buffer.buffer = arena_alloc(&state->permanent_arena, sizeof(RenderCommand) * state->render_command_buffer.capacity);
     state->render_command_buffer.count = 0;
 
-    u8* level = state->level;
-    u8* level_visibility = state->level_visibility;
-    int level_width = state->levelWidth;
-    int level_height = state->levelHeight;
+    u8* level = state->level.tiles;
+    //u8* level_visibility = state->level_visibility;
 
     for(int i = 0; i < level_width*level_height; i++) {
         level[i] = '.';
@@ -123,18 +125,18 @@ static GameState *init(GameMemory* gameMemory) {
     return state;
 }
 
-static void draw_image(GameState* state, u8* image, int _x, int _y, int image_width, int image_height) {
-}
+//static void draw_image(GameState* state, u8* image, int _x, int _y, int image_width, int image_height) {
+//}
 
 static void update_for_game(GameState* state, const u8* key_states) {
         
-        float speed = 3.0;
-        int tile_size = state->tileSize;
+        float speed = 0.5;
+        int tile_size = state->level.tile_size;
 
         MouseState* mouse = &state->mouse_state;
 
-        state->viewportX = state->things[1].x+mouse->x*0.9-SCREEN_WIDTH*0.9;
-        state->viewportY = state->things[1].y+mouse->y*0.9-SCREEN_HEIGHT*0.9;
+        state->viewportX = state->things[1].x-SCREEN_WIDTH*0.5;
+        state->viewportY = state->things[1].y-SCREEN_HEIGHT*0.5;
 
         if (key_states[SCANCODE_LSHIFT]) {
             speed = 8;
@@ -160,6 +162,7 @@ static void update_for_game(GameState* state, const u8* key_states) {
             bullet->height=5;
             bullet->projectile_counter = 500;
         }
+       
         // TODO Don't loop through all the things probably. Or just do the swapping thing for inactive
         for(int i = 0; i < MAX_THINGS; i++) {
             Thing* t = &state->things[i];
@@ -169,47 +172,66 @@ static void update_for_game(GameState* state, const u8* key_states) {
             t->old_x = t->x;
             t->old_y = t->y;
 
+            t->vx+= t->ax;
+            t->vy+= t->ay;
+            t->vx = clampf(t->vx, -5, 5);
+            t->vy = clampf(t->vy, -5, 5);
+            t->x+= t->vx;
+            t->y+= t->vy;
+
             if(flags_is_set(t->flags, FLAG_PLAYER_CONTROLLED)) {
-                    t->vx=0;
-                    t->vy=0;
+                    t->ax = 0;
+                    t->ay = 0;
                 if (key_states[SCANCODE_A]) {
-                    t->vx=-speed;
+                    t->ax=-speed;
                 }
                 if (key_states[SCANCODE_S]) {
-                    t->vy=speed;
+                    t->ay=speed;
                 }
                 if (key_states[SCANCODE_D]) {
-                    t->vx=speed;
+                    t->ax=speed;
                 }
                 if (key_states[SCANCODE_W]) {
-                    t->vy=-speed;
+                    t->ay=20*-speed;
                 }
+            }
+
+            if (flags_is_set(t->flags, FLAG_AFFECTED_BY_GRAVITY)) {
+                t->vy+=1.5;
+                if (t->vy > 5) {
+                    t->vy = 5;
+                }
+                
             }
 
             if (flags_is_set(t->flags, FLAG_CAN_MOVE)) {
                 t->x += t->vx;
                 t->y += t->vy;
+                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y+t->height)/tile_size), state->level.level_width);
+                if (state->level.tiles[index] == '1') {
+                    t->vx/=1.1;
+                }
 
                 //TODO Funkar inte alltid, ibland fastnar man
                 if (t->vx >0) {
-                    int index = ARRAY_INDEX((int)((t->x+t->width)/tile_size), (int)((t->y)/tile_size), state->levelWidth);
-                    if (state->level[index] == '1') {
+                    int index = ARRAY_INDEX((int)((t->x+t->width)/tile_size), (int)((t->y)/tile_size), state->level.level_width);
+                    if (state->level.tiles[index] == '1') {
                         t->x = t->old_x;
                     }
                 } else if (t->vx < 0) {
-                    int index = ARRAY_INDEX((int)((t->x-1)/tile_size), (int)(t->y/tile_size), state->levelWidth);
-                    if (state->level[index] == '1') {
+                    int index = ARRAY_INDEX((int)((t->x-1)/tile_size), (int)(t->y/tile_size), state->level.level_width);
+                    if (state->level.tiles[index] == '1') {
                         t->x = t->old_x;
                     }
                 }
                 if (t->vy >0) {
-                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y+t->height)/tile_size), state->levelWidth);
-                    if (state->level[index] == '1') {
+                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y+t->height)/tile_size), state->level.level_width);
+                    if (state->level.tiles[index] == '1') {
                         t->y = t->old_y;
                     }
                 } else if (t->vy < 0) {
-                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y-1)/tile_size), state->levelWidth);
-                    if (state->level[index] == '1') {
+                    int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y-1)/tile_size), state->level.level_width);
+                    if (state->level.tiles[index] == '1') {
                         t->y = t->old_y;
                     }
                 }
@@ -257,77 +279,31 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     //---------- Render 
     render_command_push_clear(&state->render_command_buffer);
     //memset(state->level_visibility, 0, state->levelWidth*state->levelHeight);
-    for(int i = 0; i < state->levelWidth*state->levelHeight;i++) {
-        if ( state->level_visibility[i]>0) {
-            state->level_visibility[i]--; 
-        }
 
 
-    }
 
+    int tile_size = state->level.tile_size;
+    int level_width = state->level.level_width;
+    int level_height = state->level.level_height;
+    int start_x = clamp(ARRAY_INDEX(state->viewportX/tile_size, 0, level_width), 0, INT_MAX);
+    int end_x = clamp(ARRAY_INDEX(state->viewportX/tile_size+SCREEN_WIDTH/tile_size, 0, level_width)+2, 0, level_width);
 
-{
-        // Line of sight
+    int start_y = ARRAY_INDEX(0, state->viewportY/(level_width*tile_size), level_width);
+    int end_y = clamp((state->viewportY+SCREEN_HEIGHT) / tile_size+1, 0, level_height);
 
-    float start_x = state->things[1].x;
-    float start_y = state->things[1].y;
-    vec2 looking_vector = vec_normalize((vec2){state->mouse_state.x-(-state->viewportX+start_x), state->mouse_state.y-(-state->viewportY+start_y)});
-    
-    int drawing_start_x = -state->viewportX+start_x;
-    int drawing_start_y = -state->viewportY+start_y;
-    render_command_push_draw_line(&state->render_command_buffer, drawing_start_x, drawing_start_y, drawing_start_x+100*looking_vector.x, drawing_start_y+100*looking_vector.y, 0);
-    //printf("%f  %f\n", looking_vector.x, looking_vector.y);
-    
-    for(float angle = 0; angle < 6.28; angle+=0.02) {
-        vec2 light_vector = vec_normalize((vec2){100*cos(angle), 100*sin(angle)});
-        //render_command_push_draw_line(&state->render_command_buffer, drawing_start_x, drawing_start_y, light_vector.x, light_vector.y, 0);
-
-        float dot = vec_dot(looking_vector, light_vector);
-
-        float max_steps = dot > 0 ? 20*dot*dot: 5*fabs(dot);
-        //printf("%f\n", max_steps);
-        for(int steps = 0; steps < max_steps; steps++) {
-            float x_to_check = start_x + (state->tileSize*steps)*cos(angle);
-            float y_to_check = start_y + (state->tileSize*steps)*sin(angle);
-
-            int grid_x = (int)(x_to_check / state->tileSize);
-            int grid_y = (int)(y_to_check / state->tileSize);
-            int index = ARRAY_INDEX(grid_x, grid_y, state->levelWidth);
-             if (state->level[index] == '1') {
-                 state->level_visibility[index] = 10;
-                    break;
-            }
-                //draw_cropped_image(state, 0, 8*32, 7*32, 32, 32, (int)(-state->viewportX+x_to_check)/state->tileSize, (int)(-state->viewportY+y_to_check)/state->tileSize, 32, 32);
-                //fill_rect(state, (-state->viewportX+x_to_check), (-state->viewportY+y_to_check), 5, 5, color);
-                state->level_visibility[index] = 10;
-
-            //}
-        }
-    }
-    }
-    
-    int start_x = clamp(ARRAY_INDEX(state->viewportX/state->tileSize, 0, state->levelWidth), 0, INT_MAX);
-    int end_x = clamp(ARRAY_INDEX(state->viewportX/state->tileSize+SCREEN_WIDTH/state->tileSize, 0, state->levelWidth)+2, 0, state->levelWidth);
-
-    int start_y = ARRAY_INDEX(0, state->viewportY/(state->levelWidth*state->tileSize), state->levelWidth);
-    int end_y = clamp((state->viewportY+SCREEN_HEIGHT) / state->tileSize+1, 0, state->levelHeight);
-
-    int tile_size = state->tileSize;
 
     for(int y = start_y; y < end_y; y++) {
         for(int x = start_x; x < end_x; x++) {
             int drawing_x = -state->viewportX+x*tile_size;
             int drawing_y = -state->viewportY+y*tile_size;
-            int index = ARRAY_INDEX(x, y, state->levelWidth);
-            if (state->level_visibility[index] > 0) {
+            int index = ARRAY_INDEX(x, y, level_width);
 
-            if(state->level[index] == '1') {
+            if(state->level.tiles[index] == '1') {
                 draw_cropped_image(state, 0, (x%3)*32, 0, 32, 32, drawing_x, drawing_y, 32, 32);
                 //fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x33333333);
-            } else if (state->level[ARRAY_INDEX(x, y, state->levelWidth)] == '.') {
+            } else if (state->level.tiles[ARRAY_INDEX(x, y, level_width)] == '.') {
                 draw_cropped_image(state, 0, 8*32, 7*32, 32, 32, drawing_x, drawing_y, 32, 32);
                 //fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x77777777);
-            }
             }
         }
     
