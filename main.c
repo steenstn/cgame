@@ -35,13 +35,13 @@ int getArrayIndex(int x, int y, int levelWidth, int tileWidth) {
     return xPos + yPos;
 }
 
-// TODO Make this not bad
 bool platform_read_whole_file(char* path, void* result, size_t length) {
     FILE *fp = fopen(path, "rb");
     if (fp == NULL) {
         printf("Failed to load %s\n", path);
         return false;
     }
+    // TODO In chunks?
     fread(result, length, 1, fp);
     fclose(fp);
     return true;

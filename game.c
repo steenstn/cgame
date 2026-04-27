@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <execinfo.h>
 
 #include "game.h"
 
@@ -23,6 +22,7 @@ enum Flags {
     FLAG_PROJECTILE = 1<<3,
     FLAG_COLLIDES_WITH_WALL = 1<<4,
     FLAG_AFFECTED_BY_GRAVITY = 1<<5,
+    FLAG_AFFECTED_BY_FRICTION = 1<<6,
 };
 
 
@@ -68,9 +68,12 @@ static GameState *init(GameMemory* gameMemory) {
         state->things[i].height = 20;
         state->things[i].flags = IS_ACTIVE | FLAG_CAN_MOVE ;
     }
-    state->things[1].flags = FLAG_PLAYER_CONTROLLED | FLAG_CAN_MOVE | IS_ACTIVE | FLAG_AFFECTED_BY_GRAVITY;
+
+    // Init player
+    state->things[1].flags = FLAG_PLAYER_CONTROLLED | FLAG_CAN_MOVE | IS_ACTIVE | FLAG_AFFECTED_BY_GRAVITY | FLAG_AFFECTED_BY_FRICTION;
     state->things[1].x = 400;
     state->things[1].y = 400;
+    state->things[1].height = 40;
 
 
     state->platform_api = gameMemory->platform_api;
@@ -130,7 +133,8 @@ static GameState *init(GameMemory* gameMemory) {
 
             }
         }
-
+    } else {
+        printf("Loaded level\n");
     }
 
     return state;
@@ -143,6 +147,7 @@ static void update_for_game(GameState* state, const u8* key_states) {
         
         float speed = 0.2;
         float max_speed = 2;
+        float max_y_speed = 3;
 
         MouseState* mouse = &state->mouse_state;
 
@@ -203,7 +208,6 @@ static void update_for_game(GameState* state, const u8* key_states) {
                     t->ax=speed;
                 }
                 if (key_states[SCANCODE_W]) {
-                    t->moving = true;
                     if (!t->jumping) {
                         t->vy = -5;
                     }
@@ -213,8 +217,8 @@ static void update_for_game(GameState* state, const u8* key_states) {
 
             if (flags_is_set(t->flags, FLAG_AFFECTED_BY_GRAVITY)) {
                 t->vy+=0.1;
-                if (t->vy > max_speed) {
-                    t->vy = max_speed;
+                if (t->vy > max_y_speed) {
+                    t->vy = max_y_speed;
                 }
                 
             }
@@ -222,21 +226,14 @@ static void update_for_game(GameState* state, const u8* key_states) {
             if (flags_is_set(t->flags, FLAG_CAN_MOVE)) {
                 t->x += t->vx;
                 t->y += t->vy;
-                // friction
-                if (!t->moving && level_get_tile(&state->level, t->x, t->y+t->height) == '1') {
-                    t->vx/=1.2;
-                }
-                if (!t->moving && level_get_tile(&state->level, t->x, t->y+t->height == '.')) {
-                    t->vx/=1.1;
-                }
 
                 //TODO Funkar inte alltid, ibland fastnar man
                 if (t->vx >0) {
-                    if (level_get_tile(&state->level, t->x + t->width, t->y) == '1') {
+                    if (level_get_tile(&state->level, t->x + t->width, t->y+(int)(t->height/2)) == '1') {
                         t->x = t->old_x;
                     }
                 } else if (t->vx < 0) {
-                    if (level_get_tile(&state->level, t->x - 1, t->y) == '1') {
+                    if (level_get_tile(&state->level, t->x - 1, t->y+(int)(t->height/2)) == '1') {
                         t->x = t->old_x;
                     }
                 }
@@ -251,6 +248,14 @@ static void update_for_game(GameState* state, const u8* key_states) {
                         t->vy = 0;
                         t->ay = 0;
                     }
+                }
+            }
+            if (flags_is_set(t->flags, FLAG_AFFECTED_BY_FRICTION)) {
+                if (!t->moving && level_get_tile(&state->level, t->x, t->y+t->height) == '1') {
+                    t->vx/=1.2;
+                }
+                if (!t->moving && level_get_tile(&state->level, t->x, t->y+t->height == '.')) {
+                    t->vx/=1.1;
                 }
             }
 
