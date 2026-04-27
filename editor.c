@@ -15,9 +15,7 @@ static void update_for_editor(GameState* state, const u8* key_states) {
         if (key_states[SCANCODE_W]) {
             state->viewportY-=speed;
         }
-        // TODO add flip
         if (state->keyboard_state.keys_hit[SCANCODE_1]) {
-            printf("aa\n");
             state->editor_state.active_tool = state->editor_state.active_tool == TOOL_PLACE_WALL ? TOOL_ERASE_WALL : TOOL_PLACE_WALL;
         }
 
