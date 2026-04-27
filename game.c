@@ -142,7 +142,7 @@ static GameState *init(GameMemory* gameMemory) {
 static void update_for_game(GameState* state, const u8* key_states) {
         
         float speed = 0.2;
-        float max_speed = 6;
+        float max_speed = 2;
 
         MouseState* mouse = &state->mouse_state;
 
@@ -150,7 +150,7 @@ static void update_for_game(GameState* state, const u8* key_states) {
         state->viewportY = state->things[1].y-SCREEN_HEIGHT*0.5;
 
         if (key_states[SCANCODE_LSHIFT]) {
-            speed = 1;
+            speed = 0.01;
         }
         if (state->keyboard_state.keys_hit[SCANCODE_TAB]) {
             state->mode = EDITOR;
@@ -182,7 +182,7 @@ static void update_for_game(GameState* state, const u8* key_states) {
             t->vx+= t->ax;
             t->vy+= t->ay;
             t->vx = clampf(t->vx, -max_speed, max_speed);
-            t->vy = clampf(t->vy, -max_speed, max_speed);
+            //t->vy = clampf(t->vy, -max_speed, max_speed);
             t->x+= t->vx;
             t->y+= t->vy;
 
@@ -204,13 +204,15 @@ static void update_for_game(GameState* state, const u8* key_states) {
                 }
                 if (key_states[SCANCODE_W]) {
                     t->moving = true;
-                    // TODO proper jump
-                    t->ay=20*-speed;
+                    if (!t->jumping) {
+                        t->vy = -5;
+                    }
+                    t->jumping = true;
                 }
             }
 
             if (flags_is_set(t->flags, FLAG_AFFECTED_BY_GRAVITY)) {
-                t->vy+=1.5;
+                t->vy+=0.1;
                 if (t->vy > max_speed) {
                     t->vy = max_speed;
                 }
@@ -220,7 +222,11 @@ static void update_for_game(GameState* state, const u8* key_states) {
             if (flags_is_set(t->flags, FLAG_CAN_MOVE)) {
                 t->x += t->vx;
                 t->y += t->vy;
+                // friction
                 if (!t->moving && level_get_tile(&state->level, t->x, t->y+t->height) == '1') {
+                    t->vx/=1.2;
+                }
+                if (!t->moving && level_get_tile(&state->level, t->x, t->y+t->height == '.')) {
                     t->vx/=1.1;
                 }
 
@@ -235,12 +241,15 @@ static void update_for_game(GameState* state, const u8* key_states) {
                     }
                 }
                 if (t->vy >0) {
-                    if (level_get_tile(&state->level, t->x, t->y+t->height)== '1') {
+                    if (level_get_tile(&state->level, t->x+(int)(t->width/2), t->y+t->height)== '1') {
                         t->y = t->old_y;
+                        t->jumping = false;
                     }
                 } else if (t->vy < 0) {
-                    if (level_get_tile(&state->level, t->x, t->y)== '1') {
+                    if (level_get_tile(&state->level, t->x+(int)(t->width/2), t->y)== '1') {
                         t->y = t->old_y;
+                        t->vy = 0;
+                        t->ay = 0;
                     }
                 }
             }
