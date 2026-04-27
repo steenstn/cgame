@@ -14,6 +14,11 @@ CompileFlags:
   Add: [-include, SDL2/SDL_keycode.h, -include, SDL2/SDL_scancode.h, -include, game.h, -include, arena.c]
 ---
 If:
-  PathMatch: editor\.c
+  PathMatch: level\.c
 CompileFlags:
   Add: [-include, SDL2/SDL_keycode.h, -include, SDL2/SDL_scancode.h, -include, game.h, -include, arena.c, -include, game_engine.c]
+---
+If:
+  PathMatch: editor\.c
+CompileFlags:
+  Add: [-include, SDL2/SDL_keycode.h, -include, SDL2/SDL_scancode.h, -include, game.h, -include, arena.c, -include, game_engine.c, -include, level.c]

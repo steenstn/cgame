@@ -11,7 +11,7 @@
 #include "game.h"
 
 #include "game_engine.c"
-//#include "level.c"
+#include "level.c"
 #include "editor.c"
 #define PI 3.1415926535
 
@@ -192,6 +192,7 @@ static void update_for_game(GameState* state, const u8* key_states) {
                     t->ax=speed;
                 }
                 if (key_states[SCANCODE_W]) {
+                    // TODO proper jump
                     t->ay=20*-speed;
                 }
             }
@@ -208,7 +209,7 @@ static void update_for_game(GameState* state, const u8* key_states) {
                 t->x += t->vx;
                 t->y += t->vy;
                     int index = ARRAY_INDEX((int)((t->x)/tile_size), (int)((t->y+t->height)/tile_size), state->level.level_width);
-                if (state->level.tiles[index] == '1') {
+                if (level_get_tile(&state->level, t->x, t->y+t->height)== '1') {
                     t->vx/=1.1;
                 }
 
