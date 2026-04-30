@@ -153,6 +153,8 @@ static void update_for_game(GameState* state, const u8* key_states) {
 
         state->viewportX = state->things[1].x-SCREEN_WIDTH*0.5;
         state->viewportY = state->things[1].y-SCREEN_HEIGHT*0.5;
+        state->viewportX = clamp(state->viewportX, 0, state->level.level_width*state->level.tile_size-SCREEN_WIDTH);
+        state->viewportY = clamp(state->viewportY, 0, state->level.level_height*state->level.tile_size-SCREEN_HEIGHT);
 
         if (key_states[SCANCODE_LSHIFT]) {
             speed = 0.01;
@@ -355,6 +357,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     draw_rect(state, 100, 30, 1000, 10, 0xffffffff);
     fill_rect(state, 101, 31, ((float)state->render_command_buffer.count/(float)state->render_command_buffer.capacity)*600, 8, 0xafafafaf);
 
+    __builtin_dump_struct(&state->things[1], printf);
     if (state->mode == EDITOR) {
         fill_rect(state, 20, 20, 20, 20, 0xff73af13);
     }

@@ -1,6 +1,6 @@
 .PHONY: game test
 all: lsp game
-	gcc -std=c99 -g -fsanitize=address -fno-omit-frame-pointer -Wall -Wextra main.c -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lm -o game
+	clang -std=c99 -g -fsanitize=address -fno-omit-frame-pointer -Wall -Wextra main.c -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lm -o game
 
 lsp:
 	@echo "# Auto-generated - run make to regenerate" > .clangd
@@ -60,6 +60,6 @@ lsp:
 		}' game.h game.c >> .clangd
 	@echo "Generated .clangd with $(shell grep -c 'PathMatch' .clangd) file entries"
 game:
-	gcc -fPIC -shared -o libgame.so -lSDL2 -lm game.c
+	clang -fPIC -shared -o libgame.so -lSDL2 -lm game.c
 test:
-	gcc test.c -o test
+	clang test.c -o test
