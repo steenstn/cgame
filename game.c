@@ -318,6 +318,9 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     
         //print_scancodes(key_states);
 
+    Queue queue = {};
+    queue.entries = arena_alloc(&state->frame_arena, 20);
+
     //---------- Render 
     state->render_command_buffer.count = 0;
     render_command_push_clear(&state->render_command_buffer);

@@ -1,11 +1,24 @@
 
-#include "game_engine.h"
-#include <stdio.h>
+#include "game.h"
+#include "game_engine.c"
+#include <assert.h>
+
 int main() {
 
-    printf("expected %d: %d\n", 5,clamp(5, 2,6));
-    printf("expected %d: %d\n", 6, clamp(5, 6,6));
-    printf("expected %d: %d\n", 4, clamp(5, 2,4));
+    void* mem = malloc(1024);
+    Arena arena;
+    arena_init(&arena, mem, 500);
+
+    Queue queue = {};
+    queue.entries = arena_alloc(&arena, 20);
+    queue.capacity = 3;
+    queue_push(&queue, 1);
+    queue_push(&queue, 2);
+    queue_push(&queue, 3);
+    queue_push(&queue, 4);
+    int res1 = queue_pop(&queue);
+
+    assert(res1 == 1);
 
 return 0;
 }

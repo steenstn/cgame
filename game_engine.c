@@ -37,6 +37,34 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 
 
+typedef struct Queue {
+    int capacity;
+    int size;
+    int head;
+    int tail;
+    int* entries;
+} Queue;
+
+
+void queue_push(Queue* queue, int value) {
+    if (queue->size >= queue->capacity) {
+        return;
+    }
+    queue->entries[queue->tail] = value;
+    queue->tail = (queue->tail + 1) % queue->capacity;
+    queue->size++;
+}
+
+int queue_pop(Queue* queue) {
+    if (queue->size <= 0) {
+        return 0;
+    }
+    int value = queue->entries[queue->head];
+    queue->head = (queue->head + 1) % (queue->capacity);
+    queue->size--;
+    return value;
+}
+
 
 static vec2 vec_minus(vec2 a, vec2 b) {
     return (vec2){a.x-b.x, a.y-b.y};
