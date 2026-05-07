@@ -227,9 +227,9 @@ static void update_for_game(GameState* state, const u8* key_states) {
             if (flags_is_set(t->flags, FLAG_AGGRESSIVE)) {
                 Thing* player = &state->things[1];
                 if (player->x < t->x) {
-                    t->vx = -2;
+                    t->vx = -1;
                 } else if(player->x > t->x) {
-                    t->vx = 2;
+                    t->vx = 1;
                 }
             }
 
@@ -308,7 +308,6 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             update_for_editor(state, key_states);
         break;
     }
-    state->render_command_buffer.count = 0;
         /*for(int i = 0; i < _NUM_KEY_CODES; i++) {
             printf("lol: %d", key_states[i]);
             state->keys_down[i] = key_states[state->keys_down[i]];
@@ -320,6 +319,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         //print_scancodes(key_states);
 
     //---------- Render 
+    state->render_command_buffer.count = 0;
     render_command_push_clear(&state->render_command_buffer);
     //memset(state->level_visibility, 0, state->levelWidth*state->levelHeight);
 

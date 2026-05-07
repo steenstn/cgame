@@ -131,7 +131,7 @@ int main(void) {
     GameState* game_state = api->init(&game_memory);
 
     bool quit = false;
-    int counter =0;
+    int counter = 0;
     while(quit == false) {
 
         if(counter++ %30 == 0){
@@ -186,7 +186,6 @@ int main(void) {
     
         int size = 0;
         const uint8_t* key_states = SDL_GetKeyboardState(&size);
-        //printf("size %d\n", size);
 
         if(game_handle){
             api->update_and_render(game_state, key_states);
@@ -238,16 +237,6 @@ int main(void) {
                 break;
                 }
         }
-        // Clear the screen first
-        /*void* pixels;
-        int pitch;
-        SDL_LockTexture(texture, NULL, &pixels, &pitch);
-
-        memcpy(pixels, game_state->output_buffer, screenWidth*screenHeight*4);
-        SDL_UnlockTexture(texture);
-        //SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
-        */
         SDL_RenderPresent(renderer);
 
     }
