@@ -23,6 +23,7 @@ enum Flags {
     FLAG_COLLIDES_WITH_WALL = 1<<4,
     FLAG_AFFECTED_BY_GRAVITY = 1<<5,
     FLAG_AFFECTED_BY_FRICTION = 1<<6,
+    FLAG_AGGRESSIVE = 1<<7
 };
 
 
@@ -61,20 +62,21 @@ static GameState *init(GameMemory* gameMemory) {
         state->things[i].width = 0;
         state->things[i].height = 0;
     }
-    for(int i = 1; i < 5; i++) {
-        state->things[i].x = i*400;
-        state->things[i].y = i*400;
-        state->things[i].width = 20;
-        state->things[i].height = 20;
-        state->things[i].flags = IS_ACTIVE | FLAG_CAN_MOVE ;
-    }
 
     // Init player
     state->things[1].flags = FLAG_PLAYER_CONTROLLED | FLAG_CAN_MOVE | IS_ACTIVE | FLAG_AFFECTED_BY_GRAVITY | FLAG_AFFECTED_BY_FRICTION;
     state->things[1].x = 400;
     state->things[1].y = 400;
+    state->things[1].width = 20;
     state->things[1].height = 40;
 
+    for(int i = 2; i < 3; i++) {
+        state->things[i].x = 600;
+        state->things[i].y = 500;
+        state->things[i].width = 20;
+        state->things[i].height = 20;
+        state->things[i].flags = IS_ACTIVE | FLAG_CAN_MOVE | FLAG_AFFECTED_BY_GRAVITY | FLAG_AGGRESSIVE;
+    }
 
     state->platform_api = gameMemory->platform_api;
 
@@ -100,6 +102,7 @@ static GameState *init(GameMemory* gameMemory) {
 
     state->editor_state = (EditorState) {.active_tool = TOOL_PLACE_WALL};
 
+    __builtin_dump_struct(&state->editor_state, printf);
     state->mouse_state.left_button_down = 0;
     state->mouse_state.left_button_click = 0;
 
@@ -142,6 +145,10 @@ static GameState *init(GameMemory* gameMemory) {
 
 //static void draw_image(GameState* state, u8* image, int _x, int _y, int image_width, int image_height) {
 //}
+//
+
+
+
 
 static void update_for_game(GameState* state, const u8* key_states) {
         
@@ -214,6 +221,15 @@ static void update_for_game(GameState* state, const u8* key_states) {
                         t->vy = -4;
                     }
                     t->jumping = true;
+                }
+            }
+
+            if (flags_is_set(t->flags, FLAG_AGGRESSIVE)) {
+                Thing* player = &state->things[1];
+                if (player->x < t->x) {
+                    t->vx = -2;
+                } else if(player->x > t->x) {
+                    t->vx = 2;
                 }
             }
 
@@ -343,7 +359,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         if (!flags_is_set(t->flags, IS_ACTIVE)) {
             continue;
         }
-        uint32_t color = flags_is_set(t->flags, FLAG_PLAYER_CONTROLLED) ? 0xff00ff00 : 0x4f4f4f;
+        uint32_t color = flags_is_set(t->flags, FLAG_PLAYER_CONTROLLED) ? 0xff00ff00 : 0x4f4fff;
         if (flags_is_set(t->flags, FLAG_PROJECTILE)) {
             color = 0xffffffff;
         }
@@ -357,7 +373,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     draw_rect(state, 100, 30, 1000, 10, 0xffffffff);
     fill_rect(state, 101, 31, ((float)state->render_command_buffer.count/(float)state->render_command_buffer.capacity)*600, 8, 0xafafafaf);
 
-    __builtin_dump_struct(&state->level, printf);
+    //__builtin_dump_struct(&state->things[2], printf);
     if (state->mode == EDITOR) {
         fill_rect(state, 20, 20, 20, 20, 0xff73af13);
     }

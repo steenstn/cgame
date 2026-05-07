@@ -106,10 +106,13 @@ typedef struct RenderCommands {
 typedef enum ActiveTool {
     TOOL_PLACE_WALL,
     TOOL_ERASE_WALL,
+    TOOL_SELECT,
 } ActiveTool;
 
 typedef struct EditorState {
     ActiveTool active_tool;
+    bool thing_selected;
+    int selected_thing_index;
 } EditorState;
 
 
