@@ -10,8 +10,8 @@
 #include "queue.c"
 
 #define MAX_THINGS 500
-#define SCREEN_WIDTH 1366
-#define SCREEN_HEIGHT 768
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 400
 
 typedef struct Image {
     void* image;
@@ -36,6 +36,11 @@ typedef struct GameMemory {
     PlatformAPI platform_api;
 } GameMemory;
 
+typedef enum Direction {
+    LEFT = 0, 
+    RIGHT = 1
+} Direction;
+
 typedef struct Thing {
     uint64_t flags;
     float x,y, old_x, old_y;
@@ -45,6 +50,7 @@ typedef struct Thing {
     int projectile_counter;
     bool jumping;
     bool moving;
+    Direction direction;
     int animation_counter;
     int animation_frame;
 } Thing;
@@ -133,6 +139,7 @@ typedef struct GameState {
     Arena frame_arena;
     Arena scratch_arena;
 
+    uint64_t ms_elapsed;
     Thing* things;
     Level level;
     int screenWidth;
@@ -156,7 +163,7 @@ typedef struct GameState {
 
 typedef struct GameAPI {
     GameState *(*init)(GameMemory* gameMemory);
-    bool (*update_and_render)(GameState* state, const uint8_t* key_states);
+    bool (*update_and_render)(GameState* state, const uint8_t* key_states, uint64_t ms_elapsed);
 } GameAPI;
 
 GameAPI* get_game_api();

@@ -81,6 +81,7 @@ static GameState *init(GameMemory* gameMemory) {
     }
 
     state->platform_api = gameMemory->platform_api;
+    state->ms_elapsed = 0;
 
     state->screenWidth = SCREEN_WIDTH;
     state->screenHeight = SCREEN_HEIGHT;
@@ -110,7 +111,7 @@ static GameState *init(GameMemory* gameMemory) {
 
 
     state->image_list = arena_alloc(&state->permanent_arena, sizeof(Image) * 5);
-    Image image = gameMemory->platform_api.load_image("tileset.bmp");
+    Image image = gameMemory->platform_api.load_image("tileset.png");
     Image player_image = gameMemory->platform_api.load_image("player.png");
     state->image_list[0] = image;
     state->image_list[1] = player_image;
@@ -217,7 +218,7 @@ return (IntList){};
 
 }
 
-static void update_for_game(GameState* state, const u8* key_states) {
+static void update_for_game(GameState* state, const u8* key_states, float delta_time) {
         
         float speed = 0.1;
         float max_speed = 2;
@@ -263,9 +264,14 @@ static void update_for_game(GameState* state, const u8* key_states) {
             t->vx+= t->ax;
             t->vy+= t->ay;
             t->vx = clampf(t->vx, -max_speed, max_speed);
+            if (t->vx > 0 ) {
+                t->direction = RIGHT;
+            } else if (t->vx < 0) {
+                t->direction = LEFT;
+            }
             //t->vy = clampf(t->vy, -max_speed, max_speed);
-            t->x+= t->vx;
-            t->y+= t->vy;
+            t->x+= t->vx*delta_time;
+            t->y+= t->vy*delta_time;
 
             if(flags_is_set(t->flags, FLAG_PLAYER_CONTROLLED)) {
                 t->moving = false;
@@ -366,11 +372,14 @@ static void print_scancodes(const u8* key_states) {
     }
 }
 
-static bool update_and_render(GameState* state, const u8* key_states) {
+static bool update_and_render(GameState* state, const u8* key_states, u64 ms_elapsed) {
+    float delta_time = (ms_elapsed - state->ms_elapsed) / 1000.0;
+    state->ms_elapsed = ms_elapsed;
+    printf("dt: %f\n", delta_time);
     arena_clear(&state->frame_arena);
     switch (state->mode) {
         case PLAY:
-            update_for_game(state, key_states);
+            update_for_game(state, key_states, delta_time);
         break;
         case EDITOR:
             update_for_editor(state, key_states);
@@ -392,6 +401,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     //---------- Render 
     state->render_command_buffer.count = 0;
     render_command_push_clear(&state->render_command_buffer);
+    fill_rect(state, 0,0, SCREEN_WIDTH, SCREEN_HEIGHT, 0x00ffbf20);
     //memset(state->level_visibility, 0, state->levelWidth*state->levelHeight);
 
 
@@ -406,22 +416,30 @@ static bool update_and_render(GameState* state, const u8* key_states) {
     int end_y = clamp((state->viewportY+SCREEN_HEIGHT) / tile_size+1, 0, level_height);
 
 
+    int level_image_index = 0;
     for(int y = start_y; y < end_y; y++) {
         for(int x = start_x; x < end_x; x++) {
             int drawing_x = -state->viewportX+x*tile_size;
             int drawing_y = -state->viewportY+y*tile_size;
             int index = ARRAY_INDEX(x, y, level_width);
 
-            if(state->level.tiles[index] == '1') {
-                draw_cropped_image(state, 0, (x%3)*tile_size, 0, tile_size, tile_size, drawing_x, drawing_y, tile_size, tile_size);
-                //fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x33333333);
-            } else if (state->level.tiles[ARRAY_INDEX(x, y, level_width)] == '.') {
-                draw_cropped_image(state, 0, 8*tile_size, 7*tile_size, tile_size, tile_size, drawing_x, drawing_y, tile_size, tile_size);
-                //fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x77777777);
-            }else if (state->level.tiles[ARRAY_INDEX(x, y, level_width)] == '2') {
-                draw_cropped_image(state, 0, 9*tile_size, 7*tile_size, tile_size, tile_size, drawing_x, drawing_y, tile_size, tile_size);
-                //fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x77777777);
+            int tile_offset_x = -1;
+            int tile_offset_y = -1;
+            switch(state->level.tiles[index]) {
+                case '1':
+                    tile_offset_x = 3*tile_size;
+                    tile_offset_y = 0;
+                break;
+                case '2':
+                    tile_offset_x = 9*tile_size;
+                    tile_offset_y = 7*tile_size;
+                break;
             }
+
+            if (tile_offset_x!= -1 && tile_offset_y != -1) {
+                draw_cropped_image(state, level_image_index, tile_offset_x, tile_offset_y, tile_size, tile_size, drawing_x, drawing_y, tile_size, tile_size);
+            }
+
         }
     
 }
@@ -440,7 +458,7 @@ static bool update_and_render(GameState* state, const u8* key_states) {
 
         
         if(flags_is_set(t->flags, FLAG_PLAYER_CONTROLLED)) {
-            draw_cropped_image(state, 1, 0, 0, t->width, t->height, -state->viewportX+t->x, -state->viewportY+t->y, state->image_list[1].width, state->image_list[1].height);
+            draw_cropped_image(state, 1, 0, 30-30*t->direction, t->width, t->height, -state->viewportX+t->x, -state->viewportY+t->y, state->image_list[1].width, state->image_list[1].height);
         } else {
             fill_rect(state, -state->viewportX+t->x,-state->viewportY+t->y,t->width,t->height, color);
         }

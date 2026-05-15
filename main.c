@@ -10,6 +10,7 @@
 #include <SDL2/SDL_scancode.h>
 #include <SDL2/SDL_stdinc.h>
 #include <SDL2/SDL_surface.h>
+#include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_image.h>
 #include <stdbool.h>
@@ -96,7 +97,7 @@ int main(void) {
 
     //SDL_ShowCursor(SDL_DISABLE);
     
-    float scale = 1;
+    float scale = 2;
     SDL_Window* window = SDL_CreateWindow("SDL tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth*scale, screenHeight*scale, SDL_WINDOW_SHOWN);
     if (window == NULL) {
         printf("Window could not be created: %s\n", SDL_GetError());
@@ -188,7 +189,7 @@ int main(void) {
         const uint8_t* key_states = SDL_GetKeyboardState(&size);
 
         if(game_handle){
-            api->update_and_render(game_state, key_states);
+            api->update_and_render(game_state, key_states, SDL_GetTicks64());
         }
 
         int num_commands = game_state->render_command_buffer.count;
