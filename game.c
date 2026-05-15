@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "game.h"
 
@@ -48,7 +49,8 @@ static GameState *init(GameMemory* gameMemory) {
     u8* arena_base = (u8*)gameMemory->permanent_storage + sizeof(GameState);
 
     arena_init(&state->permanent_arena, arena_base, gameMemory->permanent_storage_size - sizeof(GameState));
-    arena_init(&state->frame_arena, gameMemory->transient_storage, gameMemory->transient_storage_size);
+    arena_init(&state->frame_arena, gameMemory->transient_storage, gameMemory->transient_storage_size/2);
+    arena_init(&state->scratch_arena, gameMemory->transient_storage, gameMemory->transient_storage_size/2);
 
     state->things = arena_alloc(&state->permanent_arena, sizeof(Thing)*MAX_THINGS);
     for(int i = 0; i < MAX_THINGS; i++) {
@@ -68,14 +70,14 @@ static GameState *init(GameMemory* gameMemory) {
     state->things[1].x = 400;
     state->things[1].y = 400;
     state->things[1].width = 20;
-    state->things[1].height = 40;
+    state->things[1].height = 30;
 
     for(int i = 2; i < 3; i++) {
         state->things[i].x = 600;
         state->things[i].y = 500;
         state->things[i].width = 20;
         state->things[i].height = 20;
-        state->things[i].flags = IS_ACTIVE | FLAG_CAN_MOVE | FLAG_AFFECTED_BY_GRAVITY | FLAG_AGGRESSIVE;
+        state->things[i].flags = IS_ACTIVE | FLAG_CAN_MOVE | FLAG_AGGRESSIVE;
     }
 
     state->platform_api = gameMemory->platform_api;
@@ -109,7 +111,9 @@ static GameState *init(GameMemory* gameMemory) {
 
     state->image_list = arena_alloc(&state->permanent_arena, sizeof(Image) * 5);
     Image image = gameMemory->platform_api.load_image("tileset.bmp");
+    Image player_image = gameMemory->platform_api.load_image("player.png");
     state->image_list[0] = image;
+    state->image_list[1] = player_image;
 
     state->render_command_buffer.capacity = 1000;
     state->render_command_buffer.buffer = arena_alloc(&state->permanent_arena, sizeof(RenderCommand) * state->render_command_buffer.capacity);
@@ -148,7 +152,70 @@ static GameState *init(GameMemory* gameMemory) {
 //
 
 
+vec2 index_to_vec2(int index, int width) {
+    return ((vec2){index % width, (float)index / (float)width});
+}
 
+static void handle_neighbour(Dict* came_from, Queue* frontier,  vec2 current, int neighbour, int level_width, int tile_size) {
+
+        if (!dict_has_key(came_from, neighbour)) {
+            queue_push(frontier, neighbour);
+            dict_set_value(came_from, neighbour, ARRAY_INDEX((float)(current.x),(float) (current.y), level_width));
+        }
+}
+
+typedef struct IntList {
+    int size;
+    int* entries;
+} IntList;
+
+static IntList get_path(GameState* state, vec2 start_position, vec2 goal) {
+    Queue frontier = queue_init(&state->scratch_arena, 1000);
+    int level_width = state->level.level_width;
+    int tile_size = state->level.tile_size;
+    int start_index = ARRAY_INDEX((float)(start_position.x/tile_size), (float)(start_position.y/tile_size), level_width);
+    queue_push(&frontier, start_index);
+
+    Dict came_from = dict_init(&state->scratch_arena, 1000);
+    dict_set_value(&came_from, start_index, -1);
+
+    int lol = 0;
+    while(frontier.size > 0) {
+        if(lol++>10) break;
+        //printf("frontier size before pop: %d\n", frontier.size);
+        int current = queue_pop(&frontier);
+
+        //printf("frontier size aftre pop: %d\n", frontier.size);
+        /*
+        if (ARRAY_INDEX(goal.x/tile_size, goal.y/tile_size, level_width) == current) {
+            printf("end\n");
+            break;
+        }*/
+        //__builtin_dump_struct(&current, printf);
+
+        vec2 current_vec = index_to_vec2(current, level_width);
+        int above = ARRAY_INDEX((float)(current_vec.x), (float)((current_vec.y-1)), level_width);
+        //int below = ARRAY_INDEX(current_vec.x, current_vec.y+tile_size, level_width);
+        //int left = ARRAY_INDEX(current_vec.x-tile_size, current_vec.y, level_width );
+        //int right = ARRAY_INDEX(current_vec.x+tile_size, current_vec.y, level_width );
+        handle_neighbour(&came_from, &frontier, current_vec, above, level_width, tile_size);
+        //handle_neighbour(&came_from, &frontier, current_vec, below, level_width, tile_size);
+        //handle_neighbour(&came_from, &frontier, current_vec, left, level_width, tile_size);
+        //handle_neighbour(&came_from, &frontier, current_vec, right, level_width, tile_size);
+        //printf("frontier now: %d\n", frontier.size);
+    }
+
+    for(int i = 0; i < came_from.size; i++) {
+        //printf("lol\n");
+        state->level.tiles[came_from.entries[i].key] = '2';
+    }
+
+    
+    arena_clear(&state->scratch_arena);
+
+return (IntList){};
+
+}
 
 static void update_for_game(GameState* state, const u8* key_states) {
         
@@ -226,10 +293,11 @@ static void update_for_game(GameState* state, const u8* key_states) {
 
             if (flags_is_set(t->flags, FLAG_AGGRESSIVE)) {
                 Thing* player = &state->things[1];
+                get_path(state, (vec2){t->x, t->y},(vec2){player->x, player->y});
                 if (player->x < t->x) {
-                    t->vx = -1;
+                    //t->vx = -1;
                 } else if(player->x > t->x) {
-                    t->vx = 1;
+                    //t->vx = 1;
                 }
             }
 
@@ -350,6 +418,9 @@ static bool update_and_render(GameState* state, const u8* key_states) {
             } else if (state->level.tiles[ARRAY_INDEX(x, y, level_width)] == '.') {
                 draw_cropped_image(state, 0, 8*tile_size, 7*tile_size, tile_size, tile_size, drawing_x, drawing_y, tile_size, tile_size);
                 //fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x77777777);
+            }else if (state->level.tiles[ARRAY_INDEX(x, y, level_width)] == '2') {
+                draw_cropped_image(state, 0, 9*tile_size, 7*tile_size, tile_size, tile_size, drawing_x, drawing_y, tile_size, tile_size);
+                //fill_rect(state, -state->viewportX+x*state->tileSize, -state->viewportY+y*tile_size, tile_size, tile_size, 0x77777777);
             }
         }
     
@@ -362,24 +433,34 @@ static bool update_and_render(GameState* state, const u8* key_states) {
         if (!flags_is_set(t->flags, IS_ACTIVE)) {
             continue;
         }
-        uint32_t color = flags_is_set(t->flags, FLAG_PLAYER_CONTROLLED) ? 0xff00ff00 : 0x4f4fff;
+        uint32_t color = 0x4f4fff;
         if (flags_is_set(t->flags, FLAG_PROJECTILE)) {
             color = 0xffffffff;
         }
-        fill_rect(state, -state->viewportX+t->x,-state->viewportY+t->y,t->width,t->height, color);
+
+        
+        if(flags_is_set(t->flags, FLAG_PLAYER_CONTROLLED)) {
+            draw_cropped_image(state, 1, 0, 0, t->width, t->height, -state->viewportX+t->x, -state->viewportY+t->y, state->image_list[1].width, state->image_list[1].height);
+        } else {
+            fill_rect(state, -state->viewportX+t->x,-state->viewportY+t->y,t->width,t->height, color);
+        }
+
     }
     //printf("%f\n", (float)state->permanent_arena.used/(float)state->permanent_arena.size);
     draw_rect(state, 100, 5, 1000, 10, 0xffffffff);
     fill_rect(state, 101, 6, ((float)state->permanent_arena.used/(float)state->permanent_arena.size)*600, 8, 0xafafafaf);
     draw_rect(state, 100, 20, 1000, 10, 0xffffffff);
-    fill_rect(state, 101, 21, ((float)state->frame_arena.used/(float)state->frame_arena.size)*600, 8, 0xafafafaf);
+    fill_rect(state, 101, 21, ((float)state->frame_arena.used/(float)state->frame_arena.size)*600, 8, 0xafffafaf);
     draw_rect(state, 100, 30, 1000, 10, 0xffffffff);
-    fill_rect(state, 101, 31, ((float)state->render_command_buffer.count/(float)state->render_command_buffer.capacity)*600, 8, 0xafafafaf);
+    fill_rect(state, 101, 31, ((float)state->scratch_arena.used/(float)state->scratch_arena.size)*600, 8, 0xafafafaf);
+    draw_rect(state, 100, 40, 1000, 10, 0xffffffff);
+    fill_rect(state, 101, 51, ((float)state->render_command_buffer.count/(float)state->render_command_buffer.capacity)*600, 8, 0xafafafff);
 
     //__builtin_dump_struct(&state->things[2], printf);
     if (state->mode == EDITOR) {
         fill_rect(state, 20, 20, 20, 20, 0xff73af13);
     }
+
 
 
     //render_command_push_draw_image(&state->render_command_buffer, state->image_list[0], 450, 400);

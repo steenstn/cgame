@@ -9,16 +9,26 @@ CompileFlags:
   Add: []
 ---
 If:
+  PathMatch: set\.c
+CompileFlags:
+  Add: [-include, game.h, -include, arena.c]
+---
+If:
+  PathMatch: queue\.c
+CompileFlags:
+  Add: [-include, game.h, -include, arena.c, -include, set.c]
+---
+If:
   PathMatch: game_engine\.c
 CompileFlags:
-  Add: [-include, SDL2/SDL_keycode.h, -include, SDL2/SDL_scancode.h, -include, game.h, -include, arena.c]
+  Add: [-include, SDL2/SDL_keycode.h, -include, SDL2/SDL_scancode.h, -include, game.h, -include, arena.c, -include, set.c, -include, queue.c]
 ---
 If:
   PathMatch: level\.c
 CompileFlags:
-  Add: [-include, SDL2/SDL_keycode.h, -include, SDL2/SDL_scancode.h, -include, game.h, -include, arena.c, -include, game_engine.c]
+  Add: [-include, SDL2/SDL_keycode.h, -include, SDL2/SDL_scancode.h, -include, game.h, -include, arena.c, -include, set.c, -include, queue.c, -include, game_engine.c]
 ---
 If:
   PathMatch: editor\.c
 CompileFlags:
-  Add: [-include, SDL2/SDL_keycode.h, -include, SDL2/SDL_scancode.h, -include, game.h, -include, arena.c, -include, game_engine.c, -include, level.c]
+  Add: [-include, SDL2/SDL_keycode.h, -include, SDL2/SDL_scancode.h, -include, game.h, -include, arena.c, -include, set.c, -include, queue.c, -include, game_engine.c, -include, level.c]

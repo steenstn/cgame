@@ -6,6 +6,8 @@
 #include <stdint.h>
 
 #include "arena.c"
+#include "set.c"
+#include "queue.c"
 
 #define MAX_THINGS 500
 #define SCREEN_WIDTH 1366
@@ -43,6 +45,8 @@ typedef struct Thing {
     int projectile_counter;
     bool jumping;
     bool moving;
+    int animation_counter;
+    int animation_frame;
 } Thing;
 
 typedef struct vec2 {
@@ -127,6 +131,7 @@ typedef struct Level {
 typedef struct GameState {
     Arena permanent_arena;
     Arena frame_arena;
+    Arena scratch_arena;
 
     Thing* things;
     Level level;

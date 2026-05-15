@@ -3,22 +3,40 @@
 #include "game_engine.c"
 #include <assert.h>
 
-int main() {
+
+void test_dict() {
 
     void* mem = malloc(1024);
     Arena arena;
     arena_init(&arena, mem, 500);
 
-    Queue queue = {};
-    queue.entries = arena_alloc(&arena, 20);
-    queue.capacity = 3;
-    queue_push(&queue, 1);
-    queue_push(&queue, 2);
-    queue_push(&queue, 3);
-    queue_push(&queue, 4);
-    int res1 = queue_pop(&queue);
+    Dict dict = dict_init(&arena, 3);
+    dict_set_value(&dict, 20, 10);
+    dict_set_value(&dict, 20, 12);
+    int res = dict_get_value(&dict, 20);
+    assert(res == 12);
+    int res2 = dict_get_value(&dict, 99990);
+    assert(res2 == 0);
+}
 
-    assert(res1 == 1);
+void test_queue() {
+    void* mem = malloc(1024);
+    Arena arena;
+    arena_init(&arena, mem, 500);
 
-return 0;
+    Queue q = queue_init(&arena, 10);
+    queue_push(&q, (vec2){2,3});
+    queue_push(&q, (vec2){2,3});
+    queue_push(&q, (vec2){2,3});
+    queue_push(&q, (vec2){2,3});
+    queue_push(&q, (vec2){2,3});
+    printf("q %d\n", q.size);
+}
+
+int main() {
+
+    //test_dict();
+    test_queue();
+
+    return 0;
 }
