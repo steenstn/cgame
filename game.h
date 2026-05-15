@@ -123,6 +123,7 @@ typedef struct EditorState {
     ActiveTool active_tool;
     bool thing_selected;
     int selected_thing_index;
+    int mouse_position_level_index;
 } EditorState;
 
 

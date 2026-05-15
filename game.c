@@ -427,13 +427,70 @@ static bool update_and_render(GameState* state, const u8* key_states, u64 ms_ela
             int tile_offset_y = -1;
             switch(state->level.tiles[index]) {
                 case '1':
-                    tile_offset_x = 3*tile_size;
+                    tile_offset_x = 0;
                     tile_offset_y = 0;
                 break;
                 case '2':
-                    tile_offset_x = 9*tile_size;
-                    tile_offset_y = 7*tile_size;
+                    tile_offset_x = tile_size;
+                    tile_offset_y = 0;
                 break;
+                case '3':
+                    tile_offset_x = 2*tile_size;
+                    tile_offset_y = 0;
+                break;
+                case '4':
+                    tile_offset_x = 3*tile_size;
+                    tile_offset_y = 0;
+                break;
+                case '5':
+                    tile_offset_x = 0;
+                    tile_offset_y = tile_size;
+                break;
+                case '6':
+                    tile_offset_x = tile_size;
+                    tile_offset_y = tile_size;
+                break;
+                case '7':
+                    tile_offset_x = 2*tile_size;
+                    tile_offset_y = tile_size;
+                break;
+                case '8':
+                    tile_offset_x = 3*tile_size;
+                    tile_offset_y = tile_size;
+                break;
+                case '9':
+                    tile_offset_x = 0*tile_size;
+                    tile_offset_y = 2*tile_size;
+                break;
+                case 'a':
+                    tile_offset_x = 1*tile_size;
+                    tile_offset_y = 2*tile_size;
+                break;
+                case 'b':
+                    tile_offset_x = 2*tile_size;
+                    tile_offset_y = 2*tile_size;
+                break;
+                case 'c':
+                    tile_offset_x = 3*tile_size;
+                    tile_offset_y = 2*tile_size;
+                break;
+                case 'd':
+                    tile_offset_x = 0*tile_size;
+                    tile_offset_y = 3*tile_size;
+                break;
+                case 'e':
+                    tile_offset_x = 1*tile_size;
+                    tile_offset_y = 3*tile_size;
+                break;
+                case 'f':
+                    tile_offset_x = 2*tile_size;
+                    tile_offset_y = 3*tile_size;
+                break;
+                case 'g':
+                    tile_offset_x = 3*tile_size;
+                    tile_offset_y = 3*tile_size;
+                break;
+                    
             }
 
             if (tile_offset_x!= -1 && tile_offset_y != -1) {
@@ -477,6 +534,9 @@ static bool update_and_render(GameState* state, const u8* key_states, u64 ms_ela
     //__builtin_dump_struct(&state->things[2], printf);
     if (state->mode == EDITOR) {
         fill_rect(state, 20, 20, 20, 20, 0xff73af13);
+        //vec2 mouse_index_position = index_to_vec2(state->editor_state.mouse_position_level_index, state->level.level_width);
+        //fill_rect(state, -state->viewportX+mouse_index_position.x*state->level.tile_size, -state->viewportY+mouse_index_position.y*state->level.tile_size, state->level.tile_size, state->level.tile_size, 0xff73af13);
+
     }
 
 
