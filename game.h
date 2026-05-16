@@ -13,6 +13,8 @@
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 400
 
+uint8_t walls[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g'};
+
 typedef struct Image {
     void* image;
     int width, height;

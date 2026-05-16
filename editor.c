@@ -1,10 +1,6 @@
 #include "game.h"
 #include <SDL2/SDL_keycode.h>
 
-
-
-u8 walls[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g'};
-
 bool walls_contain(u8 value) {
     for(int i = 0; i < 16; i++) {
         if (walls[i]==value) {
@@ -76,48 +72,6 @@ static u8 set_tile_based_on_neighbours(GameState* state, int index) {
     }
     return 0;
 }
-static u8 get_tile_based_on_neighbours(u8 left_neighbour, u8 right_neighbour, u8 above_neighbour, u8 below_neighbour) {
-    int value = 0;
-    if (walls_contain(left_neighbour)) value+=1;
-    if (walls_contain(above_neighbour)) value+=2;
-    if (walls_contain(right_neighbour)) value+=4;
-    if (walls_contain(below_neighbour)) value+=8;
-    switch(value) {
-        case 0:
-            return 'c';
-        case 1:
-            return 'f';
-        case 2:
-            return 'g';
-        case 3:
-            return '7';
-        case 4:
-            return 'd';
-        case 5:
-            return 'a';
-        case 6:
-            return '8';
-        case 7:
-            return '4';
-        case 8:
-            return 'e';
-        case 9:
-            return '6';
-        case 10:
-            return 'b';
-        case 11:
-            return '3';
-        case 12:
-            return '9';
-        case 13:
-            return '2';
-        case 14:
-            return '5';
-        case 15:
-            return '1';
-    }
-}
-
 
 static void update_for_editor(GameState* state, const u8* key_states) {
         MouseState* mouse = &state->mouse_state;
@@ -167,12 +121,23 @@ static void update_for_editor(GameState* state, const u8* key_states) {
                         if (right_neighbour!= '.')set_tile_based_on_neighbours(state, index+1);
                         if (above_neighbour!= '.')set_tile_based_on_neighbours(state, index-state->level.level_width);
                         if (below_neighbour!= '.')set_tile_based_on_neighbours(state, index+state->level.level_width);
-            
-
                     }
                 break;
                 case TOOL_ERASE_WALL:
+                {
+
                     state->level.tiles[index] = '.';
+                    u8 left_neighbour = state->level.tiles[index - 1];
+                    u8 right_neighbour = state->level.tiles[index + 1];
+                    u8 above_neighbour = state->level.tiles[index - state->level.level_width];
+                    u8 below_neighbour = state->level.tiles[index + state->level.level_width];
+
+                    //state->level.tiles[index] = get_tile_based_on_neighbours(left_neighbour, right_neighbour, above_neighbour, below_neighbour);
+                    if (left_neighbour != '.')set_tile_based_on_neighbours(state, index-1);
+                    if (right_neighbour!= '.')set_tile_based_on_neighbours(state, index+1);
+                    if (above_neighbour!= '.')set_tile_based_on_neighbours(state, index-state->level.level_width);
+                    if (below_neighbour!= '.')set_tile_based_on_neighbours(state, index+state->level.level_width);
+                }
                 break;
                 case TOOL_SELECT: {
 

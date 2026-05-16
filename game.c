@@ -54,15 +54,7 @@ static GameState *init(GameMemory* gameMemory) {
 
     state->things = arena_alloc(&state->permanent_arena, sizeof(Thing)*MAX_THINGS);
     for(int i = 0; i < MAX_THINGS; i++) {
-        state->things[i].flags = 0;
-        state->things[i].x = 0;
-        state->things[i].y = 0;
-        state->things[i].vx = 0;
-        state->things[i].vy = 0;
-        state->things[i].ax = 0;
-        state->things[i].ay = 0;
-        state->things[i].width = 0;
-        state->things[i].height = 0;
+        state->things[i] = (Thing){};
     }
 
     // Init player
@@ -321,21 +313,21 @@ static void update_for_game(GameState* state, const u8* key_states, float delta_
 
                 //TODO Funkar inte alltid, ibland fastnar man
                 if (t->vx >0) {
-                    if (level_get_tile(&state->level, t->x + t->width, t->y+(int)(t->height/2)) == '1') {
+                    if (walls_contain(level_get_tile(&state->level, t->x + t->width, t->y+(int)(t->height/2)))) {
                         t->x = t->old_x;
                     }
                 } else if (t->vx < 0) {
-                    if (level_get_tile(&state->level, t->x - 1, t->y+(int)(t->height/2)) == '1') {
+                    if (walls_contain(level_get_tile(&state->level, t->x - 1, t->y+(int)(t->height/2)))) {
                         t->x = t->old_x;
                     }
                 }
                 if (t->vy >0) {
-                    if (level_get_tile(&state->level, t->x+(int)(t->width/2), t->y+t->height)== '1') {
+                    if (walls_contain(level_get_tile(&state->level, t->x+(int)(t->width/2), t->y+t->height))) {
                         t->y = t->old_y;
                         t->jumping = false;
                     }
                 } else if (t->vy < 0) {
-                    if (level_get_tile(&state->level, t->x+(int)(t->width/2), t->y)== '1') {
+                    if (walls_contain(level_get_tile(&state->level, t->x+(int)(t->width/2), t->y))) {
                         t->y = t->old_y;
                         t->vy = 0;
                         t->ay = 0;
@@ -490,7 +482,6 @@ static bool update_and_render(GameState* state, const u8* key_states, u64 ms_ela
                     tile_offset_x = 3*tile_size;
                     tile_offset_y = 3*tile_size;
                 break;
-                    
             }
 
             if (tile_offset_x!= -1 && tile_offset_y != -1) {
