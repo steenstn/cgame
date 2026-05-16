@@ -50,13 +50,14 @@ bool platform_read_whole_file(char* path, void* result, size_t length) {
 }
 
 bool platform_write_file(char* path, void* data, size_t length) {
-    FILE *fp = fopen(path, "wb+");
+    FILE *fp = fopen(path, "w+b");
     if (fp == NULL) {
         printf("Failed to write %s\n", path);    
         return false;
     }
     // TODO Is this the way to do it? Maybe chunk things up?
     size_t result = fwrite(data, length, 1, fp);
+    fclose(fp);
 
     return result == 1;
 }
@@ -70,10 +71,6 @@ Image platform_load_image(char* path) {
     SDL_QueryTexture(texture, NULL, NULL, &w, &h);
     Image image = {texture, .width =w, .height = h};
     return image;
-}
-
-char* woop() {
-    return "yay";
 }
 
 
@@ -124,7 +121,6 @@ int main(void) {
     game_memory.permanent_storage = malloc(game_memory.permanent_storage_size);
     game_memory.transient_storage_size = 1024 * 1024 * 2;
     game_memory.transient_storage = malloc(game_memory.transient_storage_size);
-    game_memory.platform_api.get_stuff = woop;
     game_memory.platform_api.read_whole_file = platform_read_whole_file;
     game_memory.platform_api.write_file = platform_write_file;
     game_memory.platform_api.load_image = platform_load_image;
@@ -150,11 +146,12 @@ int main(void) {
         }
 
         game_state->mouse_state.left_button_click = false;
-        game_state->mouse_state.left_button_click = false;
+        game_state->mouse_state.right_button_click = false;
 
         for(int i = 0; i < SDL_NUM_SCANCODES;i++){
             game_state->keyboard_state.keys_hit[i] = 0;
         }
+
         while(SDL_PollEvent(&e)) {
             if(e.type == SDL_QUIT) quit = true;
             if (e.type == SDL_KEYDOWN) {

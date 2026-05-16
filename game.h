@@ -21,7 +21,6 @@ typedef struct Image {
 } Image;
 
 typedef struct PlatformAPI {
-    char* (*get_stuff)();
     bool (*read_whole_file)(char* path, void* result, size_t length);
     bool (*write_file)(char* path, void* data, size_t length);
     Image (*load_image)(char* path);

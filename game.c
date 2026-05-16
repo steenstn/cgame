@@ -44,13 +44,11 @@ static GameState *init(GameMemory* gameMemory) {
         return state;
     }
 
-    printf("works? %s\n",gameMemory->platform_api.get_stuff());
-
     u8* arena_base = (u8*)gameMemory->permanent_storage + sizeof(GameState);
 
     arena_init(&state->permanent_arena, arena_base, gameMemory->permanent_storage_size - sizeof(GameState));
     arena_init(&state->frame_arena, gameMemory->transient_storage, gameMemory->transient_storage_size/2);
-    arena_init(&state->scratch_arena, gameMemory->transient_storage, gameMemory->transient_storage_size/2);
+    arena_init(&state->scratch_arena, gameMemory->transient_storage+gameMemory->transient_storage_size/2, gameMemory->transient_storage_size/2);
 
     state->things = arena_alloc(&state->permanent_arena, sizeof(Thing)*MAX_THINGS);
     for(int i = 0; i < MAX_THINGS; i++) {
@@ -200,7 +198,7 @@ static IntList get_path(GameState* state, vec2 start_position, vec2 goal) {
 
     for(int i = 0; i < came_from.size; i++) {
         //printf("lol\n");
-        state->level.tiles[came_from.entries[i].key] = '2';
+        //state->level.tiles[came_from.entries[i].key] = '2';
     }
 
     
@@ -338,7 +336,7 @@ static void update_for_game(GameState* state, const u8* key_states, float delta_
                 if (!t->moving && level_get_tile(&state->level, t->x, t->y+t->height) == '1') {
                     t->vx/=1.2;
                 }
-                if (!t->moving && level_get_tile(&state->level, t->x, t->y+t->height == '.')) {
+                if (!t->moving && level_get_tile(&state->level, t->x, t->y+t->height) == '.') {
                     t->vx/=1.1;
                 }
             }
@@ -367,7 +365,6 @@ static void print_scancodes(const u8* key_states) {
 static bool update_and_render(GameState* state, const u8* key_states, u64 ms_elapsed) {
     float delta_time = (ms_elapsed - state->ms_elapsed) / 1000.0;
     state->ms_elapsed = ms_elapsed;
-    printf("dt: %f\n", delta_time);
     arena_clear(&state->frame_arena);
     switch (state->mode) {
         case PLAY:
@@ -408,6 +405,7 @@ static bool update_and_render(GameState* state, const u8* key_states, u64 ms_ela
     int end_y = clamp((state->viewportY+SCREEN_HEIGHT) / tile_size+1, 0, level_height);
 
 
+    // Render level
     int level_image_index = 0;
     for(int y = start_y; y < end_y; y++) {
         for(int x = start_x; x < end_x; x++) {
@@ -518,7 +516,7 @@ static bool update_and_render(GameState* state, const u8* key_states, u64 ms_ela
     draw_rect(state, 100, 20, 1000, 10, 0xffffffff);
     fill_rect(state, 101, 21, ((float)state->frame_arena.used/(float)state->frame_arena.size)*600, 8, 0xafffafaf);
     draw_rect(state, 100, 30, 1000, 10, 0xffffffff);
-    fill_rect(state, 101, 31, ((float)state->scratch_arena.used/(float)state->scratch_arena.size)*600, 8, 0xafafafaf);
+    //fill_rect(state, 101, 31, ((float)state->scratch_arena.used/(float)state->scratch_arena.size)*600, 8, 0xafafafaf);
     draw_rect(state, 100, 40, 1000, 10, 0xffffffff);
     fill_rect(state, 101, 51, ((float)state->render_command_buffer.count/(float)state->render_command_buffer.capacity)*600, 8, 0xafafafff);
 

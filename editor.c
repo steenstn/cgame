@@ -115,7 +115,6 @@ static void update_for_editor(GameState* state, const u8* key_states) {
                         u8 above_neighbour = state->level.tiles[index - state->level.level_width];
                         u8 below_neighbour = state->level.tiles[index + state->level.level_width];
 
-                        //state->level.tiles[index] = get_tile_based_on_neighbours(left_neighbour, right_neighbour, above_neighbour, below_neighbour);
                         set_tile_based_on_neighbours(state, index);
                         if (left_neighbour != '.')set_tile_based_on_neighbours(state, index-1);
                         if (right_neighbour!= '.')set_tile_based_on_neighbours(state, index+1);
@@ -132,7 +131,6 @@ static void update_for_editor(GameState* state, const u8* key_states) {
                     u8 above_neighbour = state->level.tiles[index - state->level.level_width];
                     u8 below_neighbour = state->level.tiles[index + state->level.level_width];
 
-                    //state->level.tiles[index] = get_tile_based_on_neighbours(left_neighbour, right_neighbour, above_neighbour, below_neighbour);
                     if (left_neighbour != '.')set_tile_based_on_neighbours(state, index-1);
                     if (right_neighbour!= '.')set_tile_based_on_neighbours(state, index+1);
                     if (above_neighbour!= '.')set_tile_based_on_neighbours(state, index-state->level.level_width);
@@ -140,7 +138,6 @@ static void update_for_editor(GameState* state, const u8* key_states) {
                 }
                 break;
                 case TOOL_SELECT: {
-
                     int mx = state->viewportX+mouse->x;
                     int my = state->viewportY+mouse->y;
                     if (state->editor_state.thing_selected) {
