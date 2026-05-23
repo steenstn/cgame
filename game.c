@@ -138,75 +138,88 @@ static GameState *init(GameMemory* gameMemory) {
     return state;
 }
 
-//static void draw_image(GameState* state, u8* image, int _x, int _y, int image_width, int image_height) {
-//}
-//
+vec2_i world_position_to_level_position(GameState* state, float x, float y) {
+    int level_x = floor(x/(float)state->level.tile_size);
+    int level_y = floor(y/(float)state->level.tile_size);
+    return (vec2_i){.x = level_x, .y = level_y};
+}
 
+int world_position_to_level_index(GameState* state, float x, float y) {
+    vec2_i level_position = world_position_to_level_position(state, x, y);
+    return ARRAY_INDEX(level_position.x, level_position.y, state->level.level_width);
+}
 
 vec2 index_to_vec2(int index, int width) {
     return ((vec2){index % width, (float)index / (float)width});
 }
 
-static void handle_neighbour(Dict* came_from, Queue* frontier,  vec2 current, int neighbour, int level_width, int tile_size) {
+/*static void handle_neighbour(Dict* came_from, QueueVec2* frontier,  vec2 current, int neighbour, int level_width, int tile_size) {
+    if (!dict_has_key(came_from, neighbour)) {
+        queue_vec2_push(frontier, neighbour);
+        dict_set_value(came_from, neighbour, ARRAY_INDEX((float)(current.x),(float) (current.y), level_width));
+    }
+}
+*/
 
-        if (!dict_has_key(came_from, neighbour)) {
-            queue_push(frontier, neighbour);
-            dict_set_value(came_from, neighbour, ARRAY_INDEX((float)(current.x),(float) (current.y), level_width));
-        }
+
+static bool is_walkable(GameState* state, vec2_i position) {
+    return state->level.tiles[ARRAY_INDEX(position.x, position.y, state->level.level_width)] == '.';
 }
 
-typedef struct IntList {
-    int size;
-    int* entries;
-} IntList;
+static Vec2_i_List get_path(GameState* state, vec2_i start_position, vec2_i goal) {
 
-static IntList get_path(GameState* state, vec2 start_position, vec2 goal) {
-    Queue frontier = queue_init(&state->scratch_arena, 1000);
-    int level_width = state->level.level_width;
-    int tile_size = state->level.tile_size;
-    int start_index = ARRAY_INDEX((float)(start_position.x/tile_size), (float)(start_position.y/tile_size), level_width);
-    queue_push(&frontier, start_index);
+    QueueVec2 frontier = queue_vec2_init(&state->frame_arena, 2000);
+    queue_vec2_push(&frontier, start_position);
+    Dict came_from = dict_init(&state->frame_arena, 2000);
 
-    Dict came_from = dict_init(&state->scratch_arena, 1000);
-    dict_set_value(&came_from, start_index, -1);
-
-    int lol = 0;
+    int limit = 1000;
     while(frontier.size > 0) {
-        if(lol++>10) break;
-        //printf("frontier size before pop: %d\n", frontier.size);
-        int current = queue_pop(&frontier);
-
-        //printf("frontier size aftre pop: %d\n", frontier.size);
-        /*
-        if (ARRAY_INDEX(goal.x/tile_size, goal.y/tile_size, level_width) == current) {
-            printf("end\n");
+        if (limit-- <=0) {
             break;
-        }*/
-        //__builtin_dump_struct(&current, printf);
+        }
+        vec2_i current = queue_vec2_pop(&frontier);
 
-        vec2 current_vec = index_to_vec2(current, level_width);
-        int above = ARRAY_INDEX((float)(current_vec.x), (float)((current_vec.y-1)), level_width);
-        //int below = ARRAY_INDEX(current_vec.x, current_vec.y+tile_size, level_width);
-        //int left = ARRAY_INDEX(current_vec.x-tile_size, current_vec.y, level_width );
-        //int right = ARRAY_INDEX(current_vec.x+tile_size, current_vec.y, level_width );
-        handle_neighbour(&came_from, &frontier, current_vec, above, level_width, tile_size);
-        //handle_neighbour(&came_from, &frontier, current_vec, below, level_width, tile_size);
-        //handle_neighbour(&came_from, &frontier, current_vec, left, level_width, tile_size);
-        //handle_neighbour(&came_from, &frontier, current_vec, right, level_width, tile_size);
-        //printf("frontier now: %d\n", frontier.size);
+        if (current.x == goal.x && current.y == goal.y) {
+            break;
+        }
+        vec2_i above = {current.x, current.y-1};
+        vec2_i below = {current.x, current.y+1};
+        vec2_i left = {current.x-1, current.y};
+        vec2_i right = {current.x+1, current.y};
+
+        if(!dict_has_key(&came_from, above) && is_walkable(state, above)) {
+            queue_vec2_push(&frontier, above);
+            dict_set_value(&came_from, above, current);
+        }
+        if(!dict_has_key(&came_from, below) && is_walkable(state, below)) {
+            queue_vec2_push(&frontier, below);
+            dict_set_value(&came_from, below, current);
+        }
+        if(!dict_has_key(&came_from, left) && is_walkable(state, left)) {
+            queue_vec2_push(&frontier, left);
+            dict_set_value(&came_from, left, current);
+        }
+        if(!dict_has_key(&came_from, right) && is_walkable(state, right)) {
+            queue_vec2_push(&frontier, right);
+            dict_set_value(&came_from, right, current);
+        }
     }
 
-    for(int i = 0; i < came_from.size; i++) {
-        //printf("lol\n");
-        //state->level.tiles[came_from.entries[i].key] = '2';
+    vec2_i current = goal;
+
+    int size = 500;
+    Vec2_i_List path = (Vec2_i_List){size, arena_alloc(&state->frame_arena, size*sizeof(vec2_i))};
+    if(!dict_has_key(&came_from, goal)) {
+        return (Vec2_i_List){};
+    }
+    while(!vec2_i_equals(current, start_position)) {
+        path.entries[path.size++] = current;
+        current = dict_get_value(&came_from, current);
     }
 
-    
-    arena_clear(&state->scratch_arena);
-
-return (IntList){};
-
+    return path;
 }
+
 
 static void update_for_game(GameState* state, const u8* key_states, float delta_time) {
         
@@ -289,7 +302,7 @@ static void update_for_game(GameState* state, const u8* key_states, float delta_
 
             if (flags_is_set(t->flags, FLAG_AGGRESSIVE)) {
                 Thing* player = &state->things[1];
-                get_path(state, (vec2){t->x, t->y},(vec2){player->x, player->y});
+                t->path = get_path(state, world_position_to_level_position(state, t->x, t->y), world_position_to_level_position(state, player->x, player->y));
                 if (player->x < t->x) {
                     //t->vx = -1;
                 } else if(player->x > t->x) {
@@ -361,6 +374,7 @@ static void print_scancodes(const u8* key_states) {
         }
     }
 }
+
 
 static bool update_and_render(GameState* state, const u8* key_states, u64 ms_elapsed) {
     float delta_time = (ms_elapsed - state->ms_elapsed) / 1000.0;
@@ -492,6 +506,12 @@ static bool update_and_render(GameState* state, const u8* key_states, u64 ms_ela
 
     //printf("Counter: %d\n", counter);
 
+    Vec2List path = {.size = 1, .entries = arena_alloc(&state->frame_arena, 10*sizeof(vec2))};
+
+    path.entries[0]= (vec2){state->things[1].x, state->things[1].y};
+
+
+
     for(int i = 1; i < MAX_THINGS; i++) {
         Thing* t = &state->things[i];
         if (!flags_is_set(t->flags, IS_ACTIVE)) {
@@ -509,15 +529,20 @@ static bool update_and_render(GameState* state, const u8* key_states, u64 ms_ela
             fill_rect(state, -state->viewportX+t->x,-state->viewportY+t->y,t->width,t->height, color);
         }
 
+    Vec2_i_List da_path = state->things[i].path;
+
+    for(int p = 0; p < da_path.size; p++) {
+        fill_rect(state, -state->viewportX+(float)da_path.entries[p].x*state->level.tile_size, -state->viewportY+(float)da_path.entries[p].y*state->level.tile_size, 20, 20, 0xffffffff);
+    }
     }
     //printf("%f\n", (float)state->permanent_arena.used/(float)state->permanent_arena.size);
-    draw_rect(state, 100, 5, 1000, 10, 0xffffffff);
+    draw_rect(state, 100, 5, 600, 10, 0xffffffff);
     fill_rect(state, 101, 6, ((float)state->permanent_arena.used/(float)state->permanent_arena.size)*600, 8, 0xafafafaf);
-    draw_rect(state, 100, 20, 1000, 10, 0xffffffff);
+    draw_rect(state, 100, 20, 600, 10, 0xffffffff);
     fill_rect(state, 101, 21, ((float)state->frame_arena.used/(float)state->frame_arena.size)*600, 8, 0xafffafaf);
-    draw_rect(state, 100, 30, 1000, 10, 0xffffffff);
+    draw_rect(state, 100, 30, 600, 10, 0xffffffff);
     //fill_rect(state, 101, 31, ((float)state->scratch_arena.used/(float)state->scratch_arena.size)*600, 8, 0xafafafaf);
-    draw_rect(state, 100, 40, 1000, 10, 0xffffffff);
+    draw_rect(state, 100, 40, 600, 10, 0xffffffff);
     fill_rect(state, 101, 51, ((float)state->render_command_buffer.count/(float)state->render_command_buffer.capacity)*600, 8, 0xafafafff);
 
     //__builtin_dump_struct(&state->things[2], printf);

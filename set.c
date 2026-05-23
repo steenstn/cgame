@@ -1,7 +1,7 @@
 #include "game.h"
 typedef struct DictEntry {
-    int key;
-    int value;
+    vec2_i key;
+    vec2_i value;
 } DictEntry;
 
 typedef struct Dict {
@@ -20,38 +20,41 @@ static Dict dict_init(Arena* arena, int capacity) {
     return dict;
 }
 
-static int dict_get_value(Dict* dict, int key) {
+static vec2_i dict_get_value(Dict* dict, vec2_i key) {
     for(int i = 0; i < dict->size; i++) {
-        if(dict->entries[i].key == key) {
+        vec2_i entry_key = dict->entries[i].key; 
+        if(entry_key.x == key.x && entry_key.y == key.y) {
             return dict->entries[i].value;
         }
     }
-    printf("Could not find key %d in dict\n", key);
-    return 0;
+    printf("Could not find key (%d, %d) in dict\n", key.x, key.y);
+    return (vec2_i){-1, -1};
 }
 
-static bool dict_has_value(Dict* dict, int value) {
+static bool dict_has_value(Dict* dict, vec2_i value) {
     for(int i = 0; i < dict->size; i++) {
-        if(dict->entries[i].value == value) {
+        vec2_i dict_value = dict->entries[i].value; 
+        if(dict_value.x == value.x && dict_value.y == value.y) {
             return true;
         }
     }
     return false;
 }
 
-static bool dict_has_key(Dict* dict, int key) {
+static bool dict_has_key(Dict* dict, vec2_i key) {
     for(int i = 0; i < dict->size; i++) {
-        if(dict->entries[i].key == key) {
+        vec2_i entry_key = dict->entries[i].key; 
+        if(entry_key.x == key.x && entry_key.y == key.y) {
             return true;
         }
     }
     return false;
 }
 
-static bool dict_set_value(Dict* dict, int key, int value) {
+static bool dict_set_value(Dict* dict, vec2_i key, vec2_i value) {
     for(int i = 0; i < dict->size; i++) {
         DictEntry* current = &dict->entries[i];
-        if (current->key == key) {
+        if (current->key.x == key.x && current->key.y == key.y) {
             current->value = value;
             return true;
         }

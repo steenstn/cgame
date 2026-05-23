@@ -5,6 +5,18 @@
 #include <stddef.h>
 #include <stdint.h>
 
+typedef struct vec2 {
+    float x,y;
+} vec2;
+
+typedef struct vec2_i {
+    int x, y;
+} vec2_i;
+
+bool vec2_i_equals(vec2_i a, vec2_i b) {
+    return a.x == b.x && a.y == b.y;
+}
+
 #include "arena.c"
 #include "set.c"
 #include "queue.c"
@@ -14,6 +26,22 @@
 #define SCREEN_HEIGHT 400
 
 uint8_t walls[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g'};
+
+typedef struct IntList {
+    int size;
+    int* entries;
+} IntList;
+
+typedef struct Vec2List {
+    int size;
+    vec2* entries;
+} Vec2List;
+
+typedef struct Vec2_i_List {
+    int size;
+    vec2_i* entries;
+} Vec2_i_List;
+
 
 typedef struct Image {
     void* image;
@@ -51,14 +79,11 @@ typedef struct Thing {
     int projectile_counter;
     bool jumping;
     bool moving;
+    Vec2_i_List path;
     Direction direction;
     int animation_counter;
     int animation_frame;
 } Thing;
-
-typedef struct vec2 {
-    float x,y;
-} vec2;
 
 typedef struct Triangle {
     vec2 p[3];
@@ -169,7 +194,6 @@ typedef struct GameAPI {
 } GameAPI;
 
 GameAPI* get_game_api();
-
 
 
 #endif 
