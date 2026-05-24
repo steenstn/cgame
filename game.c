@@ -149,6 +149,10 @@ int world_position_to_level_index(GameState* state, float x, float y) {
     return ARRAY_INDEX(level_position.x, level_position.y, state->level.level_width);
 }
 
+vec2 level_position_to_world_position(GameState* state, int x, int y) {
+    return (vec2){x * state->level.tile_size, y * state->level.tile_size};
+}
+
 vec2 index_to_vec2(int index, int width) {
     return ((vec2){index % width, (float)index / (float)width});
 }
@@ -191,6 +195,10 @@ static Vec2_i_List get_path(GameState* state, vec2_i start_position, vec2_i goal
             queue_vec2_push(&frontier, above);
             dict_set_value(&came_from, above, current);
         }
+        if(!dict_has_key(&came_from, right) && is_walkable(state, right)) {
+            queue_vec2_push(&frontier, right);
+            dict_set_value(&came_from, right, current);
+        }
         if(!dict_has_key(&came_from, below) && is_walkable(state, below)) {
             queue_vec2_push(&frontier, below);
             dict_set_value(&came_from, below, current);
@@ -199,16 +207,12 @@ static Vec2_i_List get_path(GameState* state, vec2_i start_position, vec2_i goal
             queue_vec2_push(&frontier, left);
             dict_set_value(&came_from, left, current);
         }
-        if(!dict_has_key(&came_from, right) && is_walkable(state, right)) {
-            queue_vec2_push(&frontier, right);
-            dict_set_value(&came_from, right, current);
-        }
     }
 
     vec2_i current = goal;
 
-    int size = 500;
-    Vec2_i_List path = (Vec2_i_List){size, arena_alloc(&state->frame_arena, size*sizeof(vec2_i))};
+    int max_size = 600;
+    Vec2_i_List path = (Vec2_i_List){0, arena_alloc(&state->frame_arena, max_size*sizeof(vec2_i))};
     if(!dict_has_key(&came_from, goal)) {
         return (Vec2_i_List){};
     }
@@ -302,11 +306,21 @@ static void update_for_game(GameState* state, const u8* key_states, float delta_
 
             if (flags_is_set(t->flags, FLAG_AGGRESSIVE)) {
                 Thing* player = &state->things[1];
-                t->path = get_path(state, world_position_to_level_position(state, t->x, t->y), world_position_to_level_position(state, player->x, player->y));
-                if (player->x < t->x) {
-                    //t->vx = -1;
-                } else if(player->x > t->x) {
-                    //t->vx = 1;
+                t->path = get_path(state, world_position_to_level_position(state, t->x+5, t->y+5), world_position_to_level_position(state, player->x+5, player->y+5));
+                if (t->path.size > 0) {
+                    vec2_i next_level_position = t->path.entries[t->path.size-1];
+                    vec2 next = level_position_to_world_position(state, next_level_position.x, next_level_position.y);
+                    //__builtin_dump_struct(&next, printf);
+                    if (next.x < t->x) {
+                        t->vx = -1;
+                    } else if(next.x > t->x) {
+                        t->vx = 1;
+                    }
+                    if (next.y < t->y) {
+                        t->vy = -1;
+                    } else if (next.y > t->y) {
+                        t->vy = 1;
+                    }
                 }
             }
 
@@ -529,11 +543,19 @@ static bool update_and_render(GameState* state, const u8* key_states, u64 ms_ela
             fill_rect(state, -state->viewportX+t->x,-state->viewportY+t->y,t->width,t->height, color);
         }
 
-    Vec2_i_List da_path = state->things[i].path;
-
-    for(int p = 0; p < da_path.size; p++) {
-        fill_rect(state, -state->viewportX+(float)da_path.entries[p].x*state->level.tile_size, -state->viewportY+(float)da_path.entries[p].y*state->level.tile_size, 20, 20, 0xffffffff);
-    }
+        // Render path
+        /*if(flags_is_set(t->flags, FLAG_AGGRESSIVE)) {
+            Vec2_i_List da_path = state->things[i].path;
+            
+            for(int p = 0; p < da_path.size; p++) {
+                u32 color = 0xffffffff;
+                if(p == 0) {
+                    color = 0xffaa22ff;
+                }
+                fill_rect(state, -state->viewportX+(float)da_path.entries[p].x*state->level.tile_size, -state->viewportY+(float)da_path.entries[p].y*state->level.tile_size, 20, 20, color);
+            }
+        }
+        */
     }
     //printf("%f\n", (float)state->permanent_arena.used/(float)state->permanent_arena.size);
     draw_rect(state, 100, 5, 600, 10, 0xffffffff);
