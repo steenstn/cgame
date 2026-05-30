@@ -2,11 +2,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-typedef struct Arena {
-    uint8_t* base;
-    size_t size;
-    size_t used;
-} Arena;
+
+#include "game.h"
 
 void arena_init(Arena *arena, void* memory, size_t size) {
     arena->base = (uint8_t*)memory;

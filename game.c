@@ -11,9 +11,13 @@
 
 #include "game.h"
 
+#include "arena.c"
+#include "set.c"
+#include "queue.c"
 #include "game_engine.c"
 #include "level.c"
 #include "editor.c"
+
 #define PI 3.1415926535
 
 enum Flags {
@@ -412,8 +416,6 @@ static bool update_and_render(GameState* state, const u8* key_states, u64 ms_ela
     
         //print_scancodes(key_states);
 
-    Queue queue = {};
-    queue.entries = arena_alloc(&state->frame_arena, 20);
 
     //---------- Render 
     state->render_command_buffer.count = 0;
@@ -556,6 +558,7 @@ static bool update_and_render(GameState* state, const u8* key_states, u64 ms_ela
             }
         }
         */
+        
     }
     //printf("%f\n", (float)state->permanent_arena.used/(float)state->permanent_arena.size);
     draw_rect(state, 100, 5, 600, 10, 0xffffffff);

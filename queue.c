@@ -1,19 +1,4 @@
 #include "game.h"
-typedef struct Queue {
-    int capacity;
-    int size;
-    int head;
-    int tail;
-    int* entries;
-} Queue;
-
-typedef struct QueueVec2 {
-    int capacity;
-    int size;
-    int head;
-    int tail;
-    vec2_i* entries;
-} QueueVec2;
 
 static Queue queue_init(Arena* arena, int capacity) {
     Queue queue = {

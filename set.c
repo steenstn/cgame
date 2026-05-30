@@ -1,14 +1,4 @@
 #include "game.h"
-typedef struct DictEntry {
-    vec2_i key;
-    vec2_i value;
-} DictEntry;
-
-typedef struct Dict {
-    DictEntry* entries;
-    int capacity;
-    int size;
-} Dict;
 
 
 static Dict dict_init(Arena* arena, int capacity) {

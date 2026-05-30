@@ -109,7 +109,7 @@ int main(void) {
     game_handle = dlopen("./libgame.so", RTLD_NOW | RTLD_GLOBAL);
     if (!game_handle) {
         printf("Failed to load game.\n");
-        printf("%s\n", SDL_GetError());
+        printf("%s\n", dlerror());
         exit(1);
     }
     GameAPI* (*get_api)() = dlsym(game_handle, "get_game_api");
@@ -135,7 +135,7 @@ int main(void) {
             if(game_handle) {
                 dlclose(game_handle);
             }
-            game_handle = dlopen("./libgame.so", RTLD_NOW | RTLD_GLOBAL);
+            game_handle = dlopen("./libgame.so", RTLD_NOW | RTLD_LOCAL);
             if(!game_handle) {
                 printf("Failed to hot reload\n");
             } else {

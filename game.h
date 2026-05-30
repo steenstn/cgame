@@ -17,9 +17,6 @@ bool vec2_i_equals(vec2_i a, vec2_i b) {
     return a.x == b.x && a.y == b.y;
 }
 
-#include "arena.c"
-#include "set.c"
-#include "queue.c"
 
 #define MAX_THINGS 500
 #define SCREEN_WIDTH 640
@@ -27,6 +24,37 @@ bool vec2_i_equals(vec2_i a, vec2_i b) {
 
 uint8_t walls[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g'};
 
+typedef struct DictEntry {
+    vec2_i key;
+    vec2_i value;
+} DictEntry;
+
+typedef struct Dict {
+    DictEntry* entries;
+    int capacity;
+    int size;
+} Dict;
+typedef struct Arena {
+    uint8_t* base;
+    size_t size;
+    size_t used;
+} Arena;
+
+typedef struct Queue {
+    int capacity;
+    int size;
+    int head;
+    int tail;
+    int* entries;
+} Queue;
+
+typedef struct QueueVec2 {
+    int capacity;
+    int size;
+    int head;
+    int tail;
+    vec2_i* entries;
+} QueueVec2;
 typedef struct IntList {
     int size;
     int* entries;
@@ -77,6 +105,7 @@ typedef struct Thing {
     float ax, ay;
     int width, height;
     int projectile_counter;
+    int next_thing;
     bool jumping;
     bool moving;
     Vec2_i_List path;
